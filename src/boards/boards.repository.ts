@@ -32,7 +32,7 @@ export class BoardsRepository {
     source: BoardSource,
     offset: number,
     limit: number,
-  ): Promise<{ rows: BoardRow[]; total: number }> {
+  ): Promise<{ rows: BoardRow[]; total: number; leader: number }> {
     const movement = period === 'all';
     const rows = await this.database.db.execute<BoardRow>(sql`
       with ranked as (${rankedTotals(period, source)}),
@@ -45,10 +45,17 @@ export class BoardsRepository {
       order by r.rank
       offset ${offset} limit ${limit}
     `);
-    const [count] = await this.database.db.execute<{ total: string }>(sql`
-      select count(*)::int as total from (${rankedTotals(period, source)}) ranked
+    const [count] = await this.database.db.execute<{
+      total: string;
+      leader: string | null;
+    }>(sql`
+      select count(*)::int as total, max(tokens) as leader from (${rankedTotals(period, source)}) ranked
     `);
-    return { rows: [...rows], total: Number(count?.total ?? 0) };
+    return {
+      rows: [...rows],
+      total: Number(count?.total ?? 0),
+      leader: Number(count?.leader ?? 0),
+    };
   }
 
   async rankOf(userId: string, period: BoardPeriod): Promise<number | null> {

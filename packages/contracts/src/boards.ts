@@ -36,6 +36,7 @@ export const BoardResponseSchema = z.object({
   page: z.number().int(),
   pageSize: z.number().int(),
   totalEntries: z.number().int(),
+  leaderTokens: z.number(),
   entries: z.array(BoardEntrySchema),
 });
 export type BoardResponse = z.infer<typeof BoardResponseSchema>;

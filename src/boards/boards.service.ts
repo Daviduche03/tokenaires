@@ -41,7 +41,7 @@ export class BoardsService {
 
   async board(query: BoardQueryDto): Promise<BoardResponse> {
     const offset = (query.page - 1) * BOARD_PAGE_SIZE;
-    const { rows, total } = await this.repository.page(
+    const { rows, total, leader } = await this.repository.page(
       query.period,
       query.source,
       offset,
@@ -54,6 +54,7 @@ export class BoardsService {
       page: query.page,
       pageSize: BOARD_PAGE_SIZE,
       totalEntries: total,
+      leaderTokens: leader,
       entries: rows.map(toEntry),
     };
   }
