@@ -31,6 +31,37 @@ describe('evaluateRecord', () => {
   });
 
   it.each([
+    ['gemini-cli', 'session-8c1d2e:msg-0004'],
+    ['antigravity', 'traj_7f3a2c91.step.12'],
+    ['opencode', 'msg_01JABCDEF0123456789'],
+  ] as const)('accepts a native %s record id', (source, recordId) => {
+    expect(
+      evaluateRecord({ ...base, source, recordId, model: 'gemini-3-pro' }, now),
+    ).toBeNull();
+  });
+
+  it('rejects malformed native ids and pre-launch Antigravity records', () => {
+    const opencode = { ...base, source: 'opencode' as const, model: 'gpt-5' };
+    expect(
+      evaluateRecord({ ...opencode, recordId: '-starts-with-dash' }, now),
+    ).toBe('invalid_record_id');
+    expect(
+      evaluateRecord({ ...opencode, recordId: 'has spaces in id' }, now),
+    ).toBe('invalid_record_id');
+    expect(
+      evaluateRecord(
+        {
+          ...opencode,
+          source: 'antigravity',
+          recordId: 'traj_7f3a2c91.step.1',
+          occurredAt: '2025-08-01T00:00:00Z',
+        },
+        now,
+      ),
+    ).toBe('before_source_launch');
+  });
+
+  it.each([
     [{ recordId: 'msg_short' }, 'invalid_record_id'],
     [{ source: 'codex' as const }, 'invalid_record_id'],
     [{ occurredAt: '2026-11-04T12:00:00Z' }, 'future_timestamp'],

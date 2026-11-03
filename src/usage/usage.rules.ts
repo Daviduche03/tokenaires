@@ -4,15 +4,23 @@ import {
   UsageRecord,
 } from '@tokenaires/contracts';
 
+const NATIVE_RECORD_ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{7,159}$/;
+
 export const RECORD_ID_PATTERNS: Record<AgentSource, RegExp> = {
   'claude-code': /^msg_[A-Za-z0-9_-]{16,64}(:req_[A-Za-z0-9_-]{16,64})?$/,
   codex:
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:\d{1,7}$/i,
+  'gemini-cli': NATIVE_RECORD_ID,
+  antigravity: NATIVE_RECORD_ID,
+  opencode: NATIVE_RECORD_ID,
 };
 
 export const SOURCE_LAUNCH_DATES: Record<AgentSource, string> = {
   'claude-code': '2025-02-20T00:00:00Z',
   codex: '2025-04-14T00:00:00Z',
+  'gemini-cli': '2025-06-01T00:00:00Z',
+  antigravity: '2025-11-01T00:00:00Z',
+  opencode: '2025-04-01T00:00:00Z',
 };
 
 export const MODEL_RELEASE_DATES: ReadonlyArray<{

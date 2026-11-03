@@ -21,6 +21,6 @@ export const GITHUB = {
 
 export const THROTTLE = {
   default: { ttl: 60_000, limit: 120 },
-  ingest: { ttl: 60_000, limit: 30 },
+  ingest: { ttl: 60_000, limit: 60 },
   devicePoll: { ttl: 60_000, limit: 30 },
 } as const;
