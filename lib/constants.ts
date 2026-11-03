@@ -6,6 +6,10 @@ export const SITE = {
   installCommand: "npx tokenaires",
 } as const;
 
+export const BRAND = {
+  markSrc: "/brand/tokenaires-icon.svg",
+} as const;
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:7020/api/v1";
 
 export const PERIOD_LABELS = {

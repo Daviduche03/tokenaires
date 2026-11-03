@@ -9,11 +9,11 @@ export const OG_COLORS = {
   foreground: "#f5f5f4",
   muted: "#a1a1aa",
   line: "rgba(255,255,255,0.08)",
-  accent: "#c8f169",
+  accent: "#bef264",
   accentInk: "#141a05",
 } as const;
 
-export const OG_GLOW = "radial-gradient(60% 55% at 50% 100%, rgba(200,241,105,0.22), rgba(200,241,105,0.05) 50%, transparent 78%)";
+export const OG_GLOW = "radial-gradient(60% 55% at 50% 100%, rgba(190,242,100,0.22), rgba(190,242,100,0.05) 50%, transparent 78%)";
 
 export async function ogFonts() {
   const read = (file: string) => readFile(join(process.cwd(), "assets/fonts", file));
@@ -22,4 +22,9 @@ export async function ogFonts() {
     { name: "Aspekta", data: regular, weight: 400 as const, style: "normal" as const },
     { name: "Aspekta", data: semibold, weight: 600 as const, style: "normal" as const },
   ];
+}
+
+export async function ogLogo(): Promise<string> {
+  const png = await readFile(join(process.cwd(), "assets/brand/tokenaires-icon-512.png"));
+  return `data:image/png;base64,${png.toString("base64")}`;
 }

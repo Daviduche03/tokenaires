@@ -2,7 +2,7 @@ import { TIERS } from "@tokenaires/contracts";
 import { ImageResponse } from "next/og";
 import { getCachedProfile } from "@/lib/data/profile";
 import { formatFull } from "@/lib/format";
-import { OG_COLORS, OG_GLOW, OG_SIZE, ogFonts } from "@/lib/og";
+import { OG_COLORS, OG_GLOW, OG_SIZE, ogFonts, ogLogo } from "@/lib/og";
 
 export const alt = "Tokenaires profile";
 export const size = OG_SIZE;
@@ -10,7 +10,7 @@ export const contentType = "image/png";
 
 export default async function Image({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
-  const [profile, fonts] = await Promise.all([getCachedProfile(handle), ogFonts()]);
+  const [profile, fonts, logo] = await Promise.all([getCachedProfile(handle), ogFonts(), ogLogo()]);
   const name = profile?.user.name ?? profile?.user.handle ?? handle;
   const tier = TIERS.find((entry) => entry.id === profile?.tier)?.label ?? "";
   return new ImageResponse(
@@ -18,7 +18,7 @@ export default async function Image({ params }: { params: Promise<{ handle: stri
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 64, background: `${OG_GLOW}, ${OG_COLORS.background}`, color: OG_COLORS.foreground, fontFamily: "Aspekta" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 30, fontWeight: 600, letterSpacing: -1 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: OG_COLORS.accent, color: OG_COLORS.accentInk, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>T</div>
+            <img src={logo} alt="" width={40} height={40} />
             tokenaires
           </div>
           {profile?.ranks.all && (

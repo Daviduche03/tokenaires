@@ -41,6 +41,10 @@ cd ../backend/packages/contracts && pnpm build && pnpm pack --pack-destination .
 cd ../../../frontend && pnpm add ./vendor/tokenaires-contracts-<version>.tgz
 ```
 
+## Brand
+
+The logo mark lives in `public/brand/` (SVG and 512px PNG) and `assets/brand/` (PNG read by the Open Graph and icon routes). Brand lime is `#BEF264`. On light backgrounds the mark sits on a dark tile.
+
 ## Fonts
 
 Aspekta is used under the SIL Open Font License. See `app/fonts/OFL-Aspekta.txt`.

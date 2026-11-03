@@ -1,17 +1,17 @@
 import { ImageResponse } from "next/og";
-import { OG_COLORS, OG_GLOW, OG_SIZE, ogFonts } from "@/lib/og";
+import { OG_COLORS, OG_GLOW, OG_SIZE, ogFonts, ogLogo } from "@/lib/og";
 
 export const alt = "Tokenaires, the rich list for AI tokens";
 export const size = OG_SIZE;
 export const contentType = "image/png";
 
 export default async function Image() {
-  const fonts = await ogFonts();
+  const [fonts, logo] = await Promise.all([ogFonts(), ogLogo()]);
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: `${OG_GLOW}, ${OG_COLORS.background}`, color: OG_COLORS.foreground, fontFamily: "Aspekta" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 34, fontWeight: 600, letterSpacing: -1 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 11, background: OG_COLORS.accent, color: OG_COLORS.accentInk, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>T</div>
+          <img src={logo} alt="" width={46} height={46} />
           tokenaires
         </div>
         <div style={{ display: "flex", marginTop: 36, fontSize: 92, letterSpacing: -4 }}>
