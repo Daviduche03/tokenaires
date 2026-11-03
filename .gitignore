@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+coverage/
+*.tsbuildinfo
+.DS_Store
+AGENTS.md
+AGENT.md
+CLAUDE.md
+CODEX.md
+.openai/
+setup.sh
