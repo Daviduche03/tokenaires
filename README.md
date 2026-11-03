@@ -84,8 +84,8 @@ Each sync asks the server for your latest record per source and sends records fr
 
 | Variable | Default |
 | --- | --- |
-| `TOKENAIRES_API_URL` | `https://api.tokenaires.com/api/v1` |
-| `TOKENAIRES_WEB_URL` | `https://tokenaires.com` |
+| `TOKENAIRES_API_URL` | `https://tokenaires.cc/api/v1` |
+| `TOKENAIRES_WEB_URL` | `https://tokenaires.cc` |
 | `TOKENAIRES_NO_BROWSER` | unset. Set it to skip opening the browser at login. |
 | `XDG_CONFIG_HOME` | `~/.config` |
 | `CLAUDE_CONFIG_DIR` | unset. Claude config folders, separated by commas or the path separator. |

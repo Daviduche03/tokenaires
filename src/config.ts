@@ -3,8 +3,8 @@ import pkg from '../package.json' with { type: 'json' };
 export const CLI_NAME = 'tokenaires';
 export const CLI_VERSION: string = pkg.version;
 
-export const DEFAULT_API_URL = 'https://api.tokenaires.com/api/v1';
-export const DEFAULT_WEB_URL = 'https://tokenaires.com';
+export const DEFAULT_API_URL = 'https://tokenaires.cc/api/v1';
+export const DEFAULT_WEB_URL = 'https://tokenaires.cc';
 
 export const ENV_KEYS = {
   apiUrl: 'TOKENAIRES_API_URL',
