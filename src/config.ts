@@ -1,0 +1,81 @@
+import pkg from '../package.json' with { type: 'json' };
+
+export const CLI_NAME = 'tokenaires';
+export const CLI_VERSION: string = pkg.version;
+
+export const DEFAULT_API_URL = 'https://api.tokenaires.com/api/v1';
+export const DEFAULT_WEB_URL = 'https://tokenaires.com';
+
+export const ENV_KEYS = {
+  apiUrl: 'TOKENAIRES_API_URL',
+  webUrl: 'TOKENAIRES_WEB_URL',
+  xdgConfig: 'XDG_CONFIG_HOME',
+  claudeConfig: 'CLAUDE_CONFIG_DIR',
+  codexHome: 'CODEX_HOME',
+  noBrowser: 'TOKENAIRES_NO_BROWSER',
+} as const;
+
+export const API_PATHS = {
+  deviceStart: '/auth/device/start',
+  devicePoll: '/auth/device/poll',
+  me: '/me',
+  batches: '/usage/batches',
+} as const;
+
+export const UPLOAD_BATCH_SIZE = 1000;
+export const CURSOR_OVERLAP_MS = 48 * 60 * 60 * 1000;
+export const REQUEST_TIMEOUT_MS = 30_000;
+export const PARSE_CONCURRENCY = 8;
+export const TOP_MODELS_LIMIT = 5;
+
+export const CONFIG_DIR_NAME = 'tokenaires';
+export const CONFIG_FILE_NAME = 'config.json';
+export const CONFIG_FILE_MODE = 0o600;
+export const CONFIG_DIR_MODE = 0o700;
+
+export const SCHEDULE = {
+  label: 'com.tokenaires.sync',
+  intervalSeconds: 21_600,
+  cronExpression: '0 */6 * * *',
+  logFileName: 'tokenaires-sync.log',
+} as const;
+
+export const SCHEDULE_ENV_PASSTHROUGH = [
+  ENV_KEYS.apiUrl,
+  ENV_KEYS.webUrl,
+  ENV_KEYS.xdgConfig,
+  ENV_KEYS.claudeConfig,
+  ENV_KEYS.codexHome,
+] as const;
+
+function trimSlash(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
+function envValue(env: NodeJS.ProcessEnv, key: string): string | undefined {
+  const value = env[key]?.trim();
+  return value ? value : undefined;
+}
+
+export function resolveApiUrl(env: NodeJS.ProcessEnv, stored?: string): string {
+  return trimSlash(envValue(env, ENV_KEYS.apiUrl) ?? stored ?? DEFAULT_API_URL);
+}
+
+export function resolveWebUrl(env: NodeJS.ProcessEnv): string {
+  return trimSlash(envValue(env, ENV_KEYS.webUrl) ?? DEFAULT_WEB_URL);
+}
+
+export function profileUrl(env: NodeJS.ProcessEnv, handle: string): string {
+  return `${resolveWebUrl(env)}/u/${encodeURIComponent(handle)}`;
+}
+
+export function readEnv(env: NodeJS.ProcessEnv, key: string): string | undefined {
+  return envValue(env, key);
+}
+
+export const RATE_LIMIT = {
+  defaultWaitMs: 10_000,
+  minWaitMs: 1_000,
+  maxWaitMs: 120_000,
+  maxRetries: 12,
+} as const;

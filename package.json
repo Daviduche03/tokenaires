@@ -1,0 +1,55 @@
+{
+  "name": "tokenaires",
+  "version": "0.1.0",
+  "description": "Sync your AI coding agent token usage to the Tokenaires leaderboard.",
+  "type": "module",
+  "bin": {
+    "tokenaires": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --maxWorkers=2"
+  },
+  "keywords": [
+    "ai",
+    "tokens",
+    "leaderboard",
+    "claude-code",
+    "codex"
+  ],
+  "license": "MIT",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.7.0",
+      "onFail": "download"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tokenaires/contracts": "file:vendor/tokenaires-contracts-0.1.0.tgz",
+    "@types/node": "^26.6.6",
+    "commander": "^15.0.0",
+    "eslint": "^10.14.0",
+    "picocolors": "^1.1.1",
+    "tsup": "^9.0.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/appdever01/tokenaires.git"
+  },
+  "homepage": "https://github.com/appdever01/tokenaires/tree/cli"
+}

@@ -1,0 +1,128 @@
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { login } from '@/commands/login';
+import { status } from '@/commands/status';
+import { sync } from '@/commands/sync';
+import { runCli } from '@/program';
+import { configPath, loadConfig } from '@/store';
+import { CLAUDE_SECRET } from './fixtures/claude';
+import { testContext, type TestContext } from './helpers/context';
+import { startFakeServer, type FakeServer } from './helpers/fake-server';
+import { writeFixtureLogs } from './helpers/logs';
+import { makeTempDir, removeDir } from './helpers/temp';
+
+const UPLOAD_KEYS = ['cacheReadTokens', 'cacheWriteTokens', 'inputTokens', 'model', 'occurredAt', 'outputTokens', 'reasoningTokens', 'recordId', 'source'];
+
+describe('login and sync against a fake API', () => {
+  let root = '';
+  let server: FakeServer;
+  let ctx: TestContext;
+
+  beforeEach(async () => {
+    root = await makeTempDir('sync');
+    server = await startFakeServer();
+    const dirs = await writeFixtureLogs(root);
+    ctx = testContext({
+      home: root,
+      env: {
+        TOKENAIRES_API_URL: server.url,
+        TOKENAIRES_WEB_URL: 'http://localhost:7021',
+        XDG_CONFIG_HOME: join(root, 'xdg'),
+        CLAUDE_CONFIG_DIR: dirs.claudeConfig,
+        CODEX_HOME: dirs.codexHome,
+      },
+    });
+  });
+  afterEach(async () => {
+    await server.close();
+    await removeDir(root);
+  });
+
+  it('runs the device flow, honors slow_down and saves the config', async () => {
+    server.state.pollReplies.push({ status: 'pending' }, { status: 'slow_down', interval: 4 });
+    await login(ctx);
+    expect(ctx.sleeps).toEqual([1000, 1000, 4000]);
+    expect(ctx.opened).toEqual([expect.stringContaining('/approve?code=ABCD-EFGH')]);
+    expect(ctx.lines.join('\n')).toContain('ABCD-EFGH');
+    expect(server.state.pollBodies[0]).toEqual({ sessionId: 'sess-1', publicKey: server.state.publicKey, deviceName: 'test-host', platform: 'darwin' });
+    const saved = await loadConfig(configPath(ctx.env, ctx.home));
+    expect(saved).toMatchObject({ apiUrl: server.url, token: 'fake-token', deviceId: 'device-123', handle: 'ada' });
+  });
+
+  it('stops on a denied login without saving anything', async () => {
+    server.state.pollReplies.push({ status: 'denied' });
+    await expect(login(ctx)).rejects.toThrow('Login was denied');
+    expect(await loadConfig(configPath(ctx.env, ctx.home))).toBeNull();
+  });
+
+  it('uploads signed batches with only the allowed fields and prints the result', async () => {
+    await login(ctx);
+    server.state.rateLimitOnce = true;
+    const totals = await sync(ctx, { quiet: false });
+    expect(server.state.badSignatures).toBe(0);
+    expect(server.state.rateLimited).toBe(1);
+    expect(ctx.sleeps).toContain(3000);
+    expect(server.state.uploads).toHaveLength(1);
+    const upload = server.state.uploads[0];
+    expect(upload?.records).toHaveLength(7);
+    for (const record of upload?.records ?? []) expect(Object.keys(record).sort()).toEqual(UPLOAD_KEYS);
+    expect(upload?.raw).not.toContain(CLAUDE_SECRET);
+    expect(totals).toMatchObject({ accepted: 6, duplicates: 1, acceptedTokens: 5000 });
+    const output = ctx.lines.join('\n');
+    expect(output).toMatch(/Accepted\s+6/);
+    expect(output).toMatch(/Already synced\s+1/);
+    expect(output).toContain('#42 all time');
+    expect(output).toContain('http://localhost:7021/u/ada');
+  });
+
+  it('only sends records newer than the server cursor minus 48 hours', async () => {
+    await login(ctx);
+    server.state.cursors = [
+      { source: 'claude-code', lastOccurredAt: '2026-10-05T00:00:00.000Z' },
+      { source: 'codex', lastOccurredAt: '2026-10-01T10:00:00.000Z' },
+    ];
+    ctx.lines.length = 0;
+    await sync(ctx, { quiet: true });
+    const sent = server.state.uploads.flatMap((upload) => upload.records.map((record) => record.recordId));
+    expect(sent).toHaveLength(5);
+    expect(sent).toContain('msg_011CCCCCCCCCCCCCCCCCCCCC:req_011CCCCCCCCCCCCCCCCCCCCC');
+    expect(sent).not.toContain('msg_011AAAAAAAAAAAAAAAAAAAAA:req_011AAAAAAAAAAAAAAAAAAAAA');
+    expect(ctx.lines).toEqual([]);
+  });
+
+  it('tells the user to log in again on 401', async () => {
+    await login(ctx);
+    server.state.rejectAuth = true;
+    const code = await runCli(ctx, ['sync']);
+    expect(code).toBe(1);
+    expect(ctx.errors.join('\n')).toContain('Run tokenaires login again.');
+  });
+
+  it('shows status with tier progress', async () => {
+    await login(ctx);
+    await status(ctx);
+    const output = ctx.lines.join('\n');
+    expect(output).toContain('Logged in as @ada');
+    expect(output).toContain('Rank      #42 all time, #7 this month, unranked this week');
+    expect(output).toContain('of the way to Thousandaire');
+  });
+
+  it('logs in then syncs when run with no arguments, and scan works offline', async () => {
+    expect(await runCli(ctx, [])).toBe(0);
+    expect(server.state.uploads).toHaveLength(1);
+    const uploadsBefore = server.state.uploads.length;
+    await server.close();
+    expect(await runCli(ctx, ['scan'])).toBe(0);
+    expect(await runCli(ctx, ['--dry-run'])).toBe(0);
+    expect(server.state.uploads).toHaveLength(uploadsBefore);
+    expect(ctx.lines.join('\n')).toContain('nothing was uploaded');
+    server = await startFakeServer();
+  });
+
+  it('says so when sync runs without a login', async () => {
+    expect(await runCli(ctx, ['sync'])).toBe(1);
+    expect(ctx.errors.join('\n')).toContain('You are not logged in. Run tokenaires login first.');
+    expect(await runCli(ctx, ['status'])).toBe(0);
+    expect(ctx.lines.join('\n')).toContain('Not logged in.');
+  });
+});
