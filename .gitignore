@@ -1,0 +1,12 @@
+frontend/
+backend/
+cli/
+docs/
+.openai/
+AGENTS.md
+AGENT.md
+CLAUDE.md
+CODEX.md
+setup.sh
+.DS_Store
+node_modules/
