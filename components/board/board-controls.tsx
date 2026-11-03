@@ -1,6 +1,6 @@
 "use client";
 
-import { BOARD_PERIODS, type BoardPeriod, type BoardSource } from "@tokenaires/contracts";
+import { AGENT_SOURCES, BOARD_PERIODS, type BoardPeriod, type BoardSource } from "@tokenaires/contracts";
 import { SourceIcon } from "@/components/brand/source-icon";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import { Select, type SelectOption } from "@/components/ui/select";
@@ -11,8 +11,11 @@ const PERIOD_OPTIONS = BOARD_PERIODS.map((value) => ({ value, label: PERIOD_LABE
 
 const SOURCE_OPTIONS: ReadonlyArray<SelectOption<BoardSource>> = [
   { value: "all", label: SOURCE_FILTER_LABELS.all },
-  { value: "claude-code", label: SOURCE_FILTER_LABELS["claude-code"], icon: <SourceIcon source="claude-code" /> },
-  { value: "codex", label: SOURCE_FILTER_LABELS.codex, icon: <SourceIcon source="codex" /> },
+  ...AGENT_SOURCES.map((source) => ({
+    value: source,
+    label: SOURCE_FILTER_LABELS[source],
+    icon: <SourceIcon source={source} />,
+  })),
 ];
 
 interface BoardControlsProps {

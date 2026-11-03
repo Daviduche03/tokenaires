@@ -1,3 +1,5 @@
+import { AGENT_SOURCE_LABELS } from "@tokenaires/contracts";
+
 export const SITE = {
   name: "Tokenaires",
   description: "The rich list for developers, ranked by the AI tokens they burn.",
@@ -20,8 +22,7 @@ export const PERIOD_LABELS = {
 
 export const SOURCE_FILTER_LABELS = {
   all: "All tools",
-  "claude-code": "Claude Code",
-  codex: "Codex",
+  ...AGENT_SOURCE_LABELS,
 } as const;
 
 export const QUERY_STALE_MS = 30_000;
