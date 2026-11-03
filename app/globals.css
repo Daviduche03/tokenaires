@@ -141,6 +141,10 @@
       radial-gradient(50% 60% at 50% 100%, hsl(var(--glow) / 0.22) 0%, hsl(var(--glow) / 0.06) 45%, transparent 75%);
   }
 
+  .hero-glow-compact {
+    height: 240px;
+  }
+
   .hero-arc {
     position: absolute;
     left: 50%;

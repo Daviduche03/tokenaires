@@ -50,7 +50,7 @@ export function Board() {
   const leader = data?.leaderTokens ?? 0;
 
   return (
-    <section aria-label="Rich list" className="panel mt-6 p-3 sm:p-5">
+    <section aria-label="Rich list" className="panel p-3 sm:p-5">
       <BoardControls
         period={params.period}
         source={params.source}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { InstallCommand } from "@/components/home/install-command";
+import { TerminalDemo } from "@/components/home/terminal-demo";
 import { HOW_IT_WORKS } from "./content";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function HowItWorksPage() {
           One command signs you in with GitHub, reads the usage logs your agents already keep, and sends token counts. Nothing else.
         </p>
         <InstallCommand className="mt-7" />
+        <TerminalDemo className="mt-10 w-full max-w-xl" />
       </div>
       <ol className="mt-14 grid gap-3 sm:grid-cols-2">
         {HOW_IT_WORKS.map((section, index) => (
