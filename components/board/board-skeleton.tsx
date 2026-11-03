@@ -4,10 +4,16 @@ import { LADDER } from "./ladder";
 
 export function TopThreeSkeleton() {
   return (
-    <div aria-hidden="true" className="grid gap-3 sm:grid-cols-3 sm:items-end">
+    <div aria-hidden="true" className="grid grid-cols-3 items-end gap-2 sm:gap-3">
       {LADDER.map(({ rank, step, order }) => (
-        <div key={rank} className={`flex flex-col ${order}`}>
-          <div className="flex flex-col rounded-[var(--radius-card)] border border-line bg-panel-raised p-4 sm:rounded-b-none">
+        <div key={rank} className={`flex min-w-0 flex-col ${order}`}>
+          <div className="flex min-h-[132px] flex-col items-center rounded-t-[14px] border border-b-0 border-line bg-panel-raised px-2 pt-3 sm:hidden">
+            <Skeleton className="h-6 w-9" />
+            <Skeleton className="mt-2.5 size-9" />
+            <Skeleton className="mt-2 h-3 w-14" />
+            <Skeleton className="mt-1.5 h-3.5 w-10" />
+          </div>
+          <div className="hidden flex-col rounded-t-[var(--radius-card)] border border-line bg-panel-raised p-4 sm:flex">
             <span className="flex justify-between">
               <Skeleton className="h-6 w-9" />
               <Skeleton className="h-5 w-20" />
@@ -22,7 +28,7 @@ export function TopThreeSkeleton() {
             <Skeleton className="mt-5 h-7 w-24" />
             <Skeleton className="mt-3 h-1 w-full" />
           </div>
-          <div className={`hidden rounded-b-[var(--radius-card)] border-x border-b border-line sm:block ${step}`} />
+          <div className={`rounded-b-[14px] border-x border-b border-line sm:rounded-b-[var(--radius-card)] ${step}`} />
         </div>
       ))}
     </div>

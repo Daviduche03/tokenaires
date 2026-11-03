@@ -20,7 +20,7 @@ export default function HomePage() {
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <InstallCommand id="join" />
-            <Button asChild size="md">
+            <Button asChild size="md" className="hidden sm:inline-flex">
               <Link href="/how-it-works">How it works</Link>
             </Button>
           </div>

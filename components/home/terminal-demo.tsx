@@ -22,9 +22,9 @@ function Line({ line, typed }: { line: TerminalLine; typed: string }) {
   if (line.kind === "ok") return <p><span className="text-accent-text">✓ </span>{line.text}</p>;
   if (line.kind === "row") {
     return (
-      <p className="grid grid-cols-[7.5rem_1fr_auto] gap-3">
+      <p className="grid grid-cols-[1fr_auto] gap-3 sm:grid-cols-[7.5rem_1fr_auto]">
         <span className="text-t2">{line.label}</span>
-        <span className="text-t4">{line.detail}</span>
+        <span className="hidden text-t4 sm:block">{line.detail}</span>
         <span className="text-right">{line.value}</span>
       </p>
     );
@@ -95,7 +95,7 @@ export function TerminalDemo({ className }: { className?: string }) {
           <RestartIcon className="size-3.5" aria-hidden="true" />
         </button>
       </div>
-      <div className="flex min-h-[236px] flex-col gap-2 px-5 py-4 font-mono text-[12.5px] leading-relaxed sm:text-[13px]" aria-live="off">
+      <div className="flex min-h-[236px] flex-col gap-2 px-4 py-4 font-mono sm:px-5 text-[12.5px] leading-relaxed sm:text-[13px]" aria-live="off">
         {TERMINAL_LINES.slice(0, shownVisible).map((line, index) => (
           <motion.div
             key={`${run}-${index}`}
