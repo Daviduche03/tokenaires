@@ -1,0 +1,46 @@
+# Tokenaires frontend
+
+The public rich list: the board, the top three, developer profiles and their share cards.
+
+Next.js 16 (App Router, Cache Components), React 19, Tailwind CSS 4, TanStack Query, Radix primitives, Solar icons and the Aspekta typeface.
+
+## Setup
+
+```sh
+pnpm install
+cp .env.example .env.local
+pnpm dev
+```
+
+The site runs on http://localhost:7021 and reads from the API in `NEXT_PUBLIC_API_URL` (default http://localhost:7020/api/v1). Start the backend first; see the `backend` branch.
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Development server on port 7021 |
+| `pnpm build` | Production build |
+| `pnpm start` | Serve the production build on port 7021 |
+| `pnpm typecheck` | Generate route types and run TypeScript |
+| `pnpm lint` | ESLint |
+
+## Layout
+
+- `app/` routes: `/` board, `/u/[handle]` profile with its Open Graph card, `/how-it-works`
+- `components/board`, `components/profile`, `components/home` feature components
+- `components/ui` shared primitives (Button, SegmentedTabs, Select, Avatar, Skeleton, Tooltip)
+- `lib/api` API client, `lib/data` cached server reads, `hooks` TanStack Query hooks
+- `vendor/tokenaires-contracts-*.tgz` shared API contracts packed from `backend/packages/contracts`
+
+## Contracts
+
+Response shapes come from `@tokenaires/contracts`, owned by the backend. After a contract change, pack it from the backend and reinstall:
+
+```sh
+cd ../backend/packages/contracts && pnpm build && pnpm pack --pack-destination ../../../frontend/vendor
+cd ../../../frontend && pnpm add ./vendor/tokenaires-contracts-<version>.tgz
+```
+
+## Fonts
+
+Aspekta is used under the SIL Open Font License. See `app/fonts/OFL-Aspekta.txt`.
