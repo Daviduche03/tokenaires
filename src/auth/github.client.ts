@@ -36,8 +36,11 @@ async function postForm(
   return (await response.json()) as JsonObject;
 }
 
-const text = (value: unknown): string | null =>
-  typeof value === 'string' ? value : null;
+const text = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
 const integer = (value: unknown, fallback: number): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 

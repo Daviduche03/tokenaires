@@ -16,7 +16,7 @@ pnpm start:dev
 
 The API runs on http://localhost:7020/api/v1.
 
-`AUTH_DEV_LOGIN=true` swaps GitHub for a local approval link so the CLI can sign in without an OAuth app. It refuses to start with `NODE_ENV=production`. For real sign-in, create a GitHub OAuth App with device flow enabled and set `GITHUB_CLIENT_ID`.
+`AUTH_DEV_LOGIN=true` swaps GitHub for a local approval link so the CLI can sign in without an OAuth app. It refuses to start with `NODE_ENV=production`. For real sign-in, set `GITHUB_CLIENT_ID` to the Client ID of the Tokenaires GitHub OAuth App (device flow enabled, under appdever01's developer settings). Device flow needs no client secret, and the GitHub token is used once to read the public profile and never stored.
 
 ## Commands
 
