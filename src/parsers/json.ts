@@ -1,5 +1,7 @@
 export type JsonObject = Record<string, unknown>;
 
+export const RECORD_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.:-]{7,159}$/;
+
 export function parseObject(line: string): JsonObject | null {
   try {
     const value: unknown = JSON.parse(line);
@@ -27,13 +29,37 @@ export function text(value: unknown, key: string): string | null {
 
 export function count(value: unknown, key: string): number {
   if (!isObject(value)) return 0;
-  const next = value[key];
-  if (typeof next !== 'number' || !Number.isFinite(next) || next <= 0) return 0;
-  return Math.floor(next);
+  return toCount(value[key]);
+}
+
+export function toCount(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return 0;
+  return Math.floor(value);
 }
 
 export function isoTime(value: unknown): string | null {
   if (typeof value !== 'string' && typeof value !== 'number') return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+export function epochTime(value: unknown): string | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null;
+  return isoTime(value < 1e12 ? value * 1000 : value);
+}
+
+const ID_PART = /^[A-Za-z0-9][A-Za-z0-9_.:-]{7,}$/;
+
+export function nativeId(...parts: (string | null | undefined)[]): string | null {
+  if (parts.some((part) => !part || !ID_PART.test(part))) return null;
+  const id = parts.join(':');
+  return RECORD_ID_PATTERN.test(id) ? id : null;
+}
+
+export function bytesHave(line: Buffer, markers: readonly Buffer[]): boolean {
+  return markers.some((marker) => line.includes(marker));
+}
+
+export function markerBuffers(...markers: string[]): Buffer[] {
+  return markers.map((marker) => Buffer.from(marker));
 }

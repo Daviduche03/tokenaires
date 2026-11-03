@@ -1,4 +1,4 @@
-import { AGENT_SOURCE_LABELS, AGENT_SOURCES } from '@tokenaires/contracts';
+import { AGENT_SOURCE_LABELS, type AgentSource } from '@tokenaires/contracts';
 import type { ScanSummary, TokenTotals } from '@/summary';
 import { formatCompact, formatDay, formatInt, formatPercent, plural } from '@/ui/format';
 import { renderTable, type Column, type Row } from '@/ui/table';
@@ -26,8 +26,8 @@ function cells(label: string, totals: TokenTotals): string[] {
   ];
 }
 
-export function renderScanReport(summary: ScanSummary): string[] {
-  const rows: Row[] = AGENT_SOURCES.map((source) => ({
+export function renderScanReport(summary: ScanSummary, sources: readonly AgentSource[]): string[] {
+  const rows: Row[] = sources.map((source) => ({
     cells: cells(AGENT_SOURCE_LABELS[source], summary.bySource[source]),
   }));
   rows.push({ cells: cells('All sources', summary.overall), paint: theme.strong });

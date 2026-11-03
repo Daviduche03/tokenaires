@@ -1,27 +1,58 @@
-import type { AgentSource, UsageRecord } from '@tokenaires/contracts';
+import { stat } from 'node:fs/promises';
+import { AGENT_SOURCES, type AgentSource, type UsageRecord } from '@tokenaires/contracts';
 import { PARSE_CONCURRENCY } from '@/config';
-import { findAll } from '@/files/walk';
+import { loadScanCache, scanCachePath, type ScanCache } from '@/cache/scan-cache';
 import { runPool } from '@/files/lines';
-import { parseClaudeFile } from '@/parsers/claude';
-import { parseCodexFile } from '@/parsers/codex';
-import { claudeRoots, codexRoots } from '@/parsers/paths';
+import { keepLargest } from '@/parsers/merge';
+import { antigravitySource } from '@/sources/antigravity';
+import { claudeSource } from '@/sources/claude';
+import { codexSource } from '@/sources/codex';
+import { geminiSource } from '@/sources/gemini';
+import { openCodeSource } from '@/sources/opencode';
+import type { LogSource, SourceContext } from '@/sources/types';
+
+export const LOG_SOURCES: readonly LogSource[] = [claudeSource, codexSource, geminiSource, antigravitySource, openCodeSource];
 
 export interface ScanOptions {
   env: NodeJS.ProcessEnv;
   home: string;
+  platform?: NodeJS.Platform;
+  cachePath?: string | null;
 }
 
 export interface ScanResult {
   records: UsageRecord[];
   files: Record<AgentSource, number>;
+  cachedFiles: number;
 }
 
-type FileParser = (path: string, into: Map<string, UsageRecord>) => Promise<void>;
+async function fileSignature(path: string): Promise<string | null> {
+  try {
+    const info = await stat(path);
+    return `${info.size}:${info.mtimeMs}`;
+  } catch {
+    return null;
+  }
+}
 
-async function collect(roots: string[], parse: FileParser): Promise<{ records: UsageRecord[]; files: number }> {
-  const files = await findAll(roots);
+async function readOne(source: LogSource, path: string, cache: ScanCache): Promise<UsageRecord[]> {
+  const sig = (await source.signature?.(path)) ?? (await fileSignature(path));
+  const hit = sig ? cache.get(path, sig) : null;
+  if (hit) return hit;
+  const records = await source.parse(path);
+  if (records && sig) cache.set(path, sig, source.source, records);
+  return records ?? [];
+}
+
+async function collect(source: LogSource, ctx: SourceContext, cache: ScanCache): Promise<{ records: UsageRecord[]; files: number }> {
+  const files = await source.discover(ctx);
+  const perFile: UsageRecord[][] = new Array<UsageRecord[]>(files.length);
+  const order = files.map((file, index) => ({ file, index }));
+  await runPool(order, PARSE_CONCURRENCY, async ({ file, index }) => {
+    perFile[index] = await readOne(source, file, cache);
+  });
   const into = new Map<string, UsageRecord>();
-  await runPool(files, PARSE_CONCURRENCY, (file) => parse(file, into));
+  for (const records of perFile) for (const record of records) keepLargest(into, record);
   return { records: [...into.values()], files: files.length };
 }
 
@@ -30,13 +61,19 @@ export function byTime(a: UsageRecord, b: UsageRecord): number {
   return a.recordId < b.recordId ? -1 : a.recordId > b.recordId ? 1 : 0;
 }
 
+function emptyCounts(): Record<AgentSource, number> {
+  return Object.fromEntries(AGENT_SOURCES.map((source) => [source, 0])) as Record<AgentSource, number>;
+}
+
 export async function scanLocal(options: ScanOptions): Promise<ScanResult> {
-  const [claude, codex] = await Promise.all([
-    collect(claudeRoots(options.env, options.home), parseClaudeFile),
-    collect(codexRoots(options.env, options.home), parseCodexFile),
-  ]);
-  return {
-    records: [...claude.records, ...codex.records].sort(byTime),
-    files: { 'claude-code': claude.files, codex: codex.files },
-  };
+  const ctx: SourceContext = { env: options.env, home: options.home, platform: options.platform ?? process.platform };
+  const cachePath = options.cachePath === undefined ? scanCachePath(options.env, options.home) : options.cachePath;
+  const cache = await loadScanCache(cachePath);
+  const results = await Promise.all(LOG_SOURCES.map((source) => collect(source, ctx, cache)));
+  await cache.save();
+  const files = emptyCounts();
+  LOG_SOURCES.forEach((source, index) => {
+    files[source.source] = results[index]?.files ?? 0;
+  });
+  return { records: results.flatMap((result) => result.records).sort(byTime), files, cachedFiles: cache.hits };
 }

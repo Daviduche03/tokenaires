@@ -4,7 +4,7 @@ export default defineConfig({
   entry: { cli: 'src/cli.ts' },
   format: ['esm'],
   platform: 'node',
-  target: 'node20',
+  target: 'node22',
   outDir: 'dist',
   clean: true,
   bundle: true,
@@ -12,5 +12,6 @@ export default defineConfig({
   sourcemap: false,
   minify: false,
   noExternal: [/.*/],
+  removeNodeProtocol: false,
   banner: { js: '#!/usr/bin/env node' },
 });

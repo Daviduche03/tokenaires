@@ -9,10 +9,11 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22.15"
   },
   "scripts": {
     "build": "tsup",
@@ -25,7 +26,10 @@
     "tokens",
     "leaderboard",
     "claude-code",
-    "codex"
+    "codex",
+    "gemini-cli",
+    "antigravity",
+    "opencode"
   ],
   "license": "MIT",
   "devEngines": {
@@ -37,7 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@tokenaires/contracts": "file:vendor/tokenaires-contracts-0.1.0.tgz",
+    "@tokenaires/contracts": "file:vendor/tokenaires-contracts-0.3.1.tgz",
     "@types/node": "^26.6.6",
     "commander": "^15.0.0",
     "eslint": "^10.14.0",

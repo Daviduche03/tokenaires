@@ -12,7 +12,12 @@ export const ENV_KEYS = {
   xdgConfig: 'XDG_CONFIG_HOME',
   claudeConfig: 'CLAUDE_CONFIG_DIR',
   codexHome: 'CODEX_HOME',
+  geminiHome: 'GEMINI_CLI_HOME',
+  xdgData: 'XDG_DATA_HOME',
+  openCodeData: 'OPENCODE_DATA_DIR',
+  openCodeDbPrefix: 'OPENCODE_DB_PREFIX',
   noBrowser: 'TOKENAIRES_NO_BROWSER',
+  noCache: 'TOKENAIRES_NO_CACHE',
 } as const;
 
 export const API_PATHS = {
@@ -27,6 +32,11 @@ export const CURSOR_OVERLAP_MS = 48 * 60 * 60 * 1000;
 export const REQUEST_TIMEOUT_MS = 30_000;
 export const PARSE_CONCURRENCY = 8;
 export const TOP_MODELS_LIMIT = 5;
+
+export const SCAN_CACHE_FILE_NAME = 'scan-cache.json.gz';
+export const SCAN_CACHE_VERSION = 1;
+export const SYNC_STATE_FILE_NAME = 'sync-state.json';
+export const RECORD_RULES_VERSION = 2;
 
 export const CONFIG_DIR_NAME = 'tokenaires';
 export const CONFIG_FILE_NAME = 'config.json';
@@ -46,6 +56,10 @@ export const SCHEDULE_ENV_PASSTHROUGH = [
   ENV_KEYS.xdgConfig,
   ENV_KEYS.claudeConfig,
   ENV_KEYS.codexHome,
+  ENV_KEYS.geminiHome,
+  ENV_KEYS.xdgData,
+  ENV_KEYS.openCodeData,
+  ENV_KEYS.openCodeDbPrefix,
 ] as const;
 
 function trimSlash(url: string): string {

@@ -2,7 +2,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { batchBodies, prepareRecords, toUploadRecord, UPLOAD_FIELDS } from '@/payload';
 import { scanLocal } from '@/scan';
 import { CLAUDE_CWD, CLAUDE_SECRET } from './fixtures/claude';
+import { ANTIGRAVITY_SECRET } from './fixtures/antigravity';
 import { CODEX_SECRET } from './fixtures/codex';
+import { GEMINI_SECRET } from './fixtures/gemini';
+import { OPENCODE_SECRET } from './fixtures/opencode';
+import { writeAllSourceFixtures } from './helpers/all-sources';
 import { writeFixtureLogs } from './helpers/logs';
 import { makeTempDir, removeDir } from './helpers/temp';
 
@@ -25,7 +29,7 @@ describe('upload payload privacy', () => {
   beforeAll(async () => {
     root = await makeTempDir('privacy');
     const dirs = await writeFixtureLogs(root);
-    const scanned = await scanLocal({ env: { CLAUDE_CONFIG_DIR: dirs.claudeConfig, CODEX_HOME: dirs.codexHome }, home: root });
+    const scanned = await scanLocal({ env: { CLAUDE_CONFIG_DIR: dirs.claudeConfig, CODEX_HOME: dirs.codexHome }, home: root, cachePath: null });
     bodies = batchBodies(prepareRecords(scanned.records).valid);
   });
   afterAll(async () => {
@@ -65,5 +69,38 @@ describe('upload payload privacy', () => {
       prompt: 'hello',
     };
     expect(Object.keys(toUploadRecord(tainted)).sort()).toEqual(EXPECTED_KEYS);
+  });
+});
+
+describe('upload payload privacy across every source', () => {
+  let root = '';
+  let records: Record<string, unknown>[] = [];
+  let body = '';
+
+  beforeAll(async () => {
+    root = await makeTempDir('privacy-all');
+    const dirs = await writeAllSourceFixtures(root);
+    const scanned = await scanLocal({ env: { CLAUDE_CONFIG_DIR: dirs.claudeConfig, CODEX_HOME: dirs.codexHome }, home: root, cachePath: null });
+    const bodies = batchBodies(prepareRecords(scanned.records).valid);
+    body = bodies.join('\n');
+    records = bodies.flatMap((text) => (JSON.parse(text) as { records: Record<string, unknown>[] }).records);
+  });
+  afterAll(async () => {
+    await removeDir(root);
+  });
+
+  it('includes valid records from the new sources with only the nine fields', () => {
+    const sources = new Set(records.map((record) => record.source));
+    expect([...sources].sort()).toEqual(['antigravity', 'claude-code', 'codex', 'gemini-cli', 'opencode']);
+    for (const record of records) expect(Object.keys(record).sort()).toEqual(EXPECTED_KEYS);
+    for (const record of records.filter((item) => item.source !== 'claude-code' && item.source !== 'codex')) {
+      expect(record.recordId).toMatch(/^[A-Za-z0-9][A-Za-z0-9_.:-]{7,159}$/);
+    }
+  });
+
+  it('never includes prompts, project hashes, titles or paths from the new sources', () => {
+    for (const secret of [GEMINI_SECRET, ANTIGRAVITY_SECRET, OPENCODE_SECRET, 'secret-project-hash', 'secret title', 'secret step payload', 'opencode-secret', 'ses_secretsession01', '/Users/']) {
+      expect(body).not.toContain(secret);
+    }
   });
 });

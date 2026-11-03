@@ -9,6 +9,7 @@ import { addResult, emptySyncTotals, type SyncTotals } from '@/ingest-totals';
 import { batchBodies, prepareRecords, selectForUpload } from '@/payload';
 import { scanLocal } from '@/scan';
 import { configPath, loadConfig, type StoredConfig } from '@/store';
+import { markFullUpload, needsFullUpload, syncStatePath } from '@/sync-state';
 import { renderSyncReport } from '@/ui/sync-report';
 import { plural } from '@/ui/format';
 import { theme } from '@/ui/theme';
@@ -23,8 +24,10 @@ function uploadingLine(records: number, batches: number): string {
 }
 
 async function upload(ctx: Context, client: ApiClient, config: StoredConfig, me: MeSummary, quiet: boolean): Promise<SyncTotals> {
-  const scanned = await scanLocal({ env: ctx.env, home: ctx.home });
-  const prepared = prepareRecords(selectForUpload(scanned.records, me.cursors));
+  const scanned = await scanLocal({ env: ctx.env, home: ctx.home, platform: ctx.platform });
+  const statePath = syncStatePath(ctx.env, ctx.home);
+  const full = await needsFullUpload(statePath, config.handle);
+  const prepared = prepareRecords(full ? scanned.records : selectForUpload(scanned.records, me.cursors));
   const bodies = batchBodies(prepared.valid);
   const totals = emptySyncTotals(prepared.invalid);
   if (!quiet) ctx.out.line(theme.dim(uploadingLine(prepared.valid.length, bodies.length)));
@@ -37,6 +40,7 @@ async function upload(ctx: Context, client: ApiClient, config: StoredConfig, me:
     });
     addResult(totals, result);
   }
+  if (full) await markFullUpload(statePath, config.handle);
   return totals;
 }
 

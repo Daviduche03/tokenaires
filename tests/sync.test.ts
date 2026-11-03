@@ -1,10 +1,13 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { login } from '@/commands/login';
 import { status } from '@/commands/status';
 import { sync } from '@/commands/sync';
 import { runCli } from '@/program';
+import { RECORD_RULES_VERSION } from '@/config';
 import { configPath, loadConfig } from '@/store';
+import { markFullUpload, syncStatePath } from '@/sync-state';
 import { CLAUDE_SECRET } from './fixtures/claude';
 import { testContext, type TestContext } from './helpers/context';
 import { startFakeServer, type FakeServer } from './helpers/fake-server';
@@ -75,8 +78,24 @@ describe('login and sync against a fake API', () => {
     expect(output).toContain('http://localhost:7021/u/ada');
   });
 
+  it('sends every record once after the record rules change, then only new ones', async () => {
+    await login(ctx);
+    server.state.cursors = [
+      { source: 'claude-code', lastOccurredAt: '2026-10-05T00:00:00.000Z' },
+      { source: 'codex', lastOccurredAt: '2026-10-01T10:00:00.000Z' },
+    ];
+    await sync(ctx, { quiet: true });
+    expect(server.state.uploads.flatMap((upload) => upload.records)).toHaveLength(7);
+    const state = JSON.parse(await readFile(syncStatePath(ctx.env, ctx.home), 'utf8')) as Record<string, unknown>;
+    expect(state).toEqual({ handle: 'ada', rulesVersion: RECORD_RULES_VERSION });
+    server.state.uploads.length = 0;
+    await sync(ctx, { quiet: true });
+    expect(server.state.uploads.flatMap((upload) => upload.records)).toHaveLength(5);
+  });
+
   it('only sends records newer than the server cursor minus 48 hours', async () => {
     await login(ctx);
+    await markFullUpload(syncStatePath(ctx.env, ctx.home), 'ada');
     server.state.cursors = [
       { source: 'claude-code', lastOccurredAt: '2026-10-05T00:00:00.000Z' },
       { source: 'codex', lastOccurredAt: '2026-10-01T10:00:00.000Z' },

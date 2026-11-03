@@ -45,3 +45,33 @@ export const claudeSubagentSession = [
   assistant('msg_011AAAAAAAAAAAAAAAAAAAAA', 'req_011AAAAAAAAAAAAAAAAAAAAA', 50),
   assistant('msg_011CCCCCCCCCCCCCCCCCCCCC', 'req_011CCCCCCCCCCCCCCCCCCCCC', 30, { timestamp: '2026-10-03T12:00:00.000Z' }),
 ];
+
+export function claudeAssistant(id: string, requestId: string, timestamp: string, usage: Record<string, unknown>): string {
+  return JSON.stringify({
+    type: 'assistant',
+    cwd: CLAUDE_CWD,
+    timestamp,
+    requestId,
+    message: { id, model: 'claude-test-model', role: 'assistant', content: [{ type: 'text', text: CLAUDE_SECRET }], usage },
+  });
+}
+
+export const claudeEdgeSession = [
+  claudeAssistant('msg_011DDDDDDDDDDDDDDDDDDDDD', 'req_011DDDDDDDDDDDDDDDDDDDDD', '2026-10-04T09:00:00.000Z', {
+    input_tokens: 0,
+    output_tokens: 0,
+    cache_read_input_tokens: 0,
+    cache_creation_input_tokens: 0,
+  }),
+  claudeAssistant('msg_011EEEEEEEEEEEEEEEEEEEEE', 'req_011EEEEEEEEEEEEEEEEEEEEE', '2026-10-04T10:00:00.000Z', {
+    input_tokens: 5,
+    output_tokens: 40,
+    cache_read_input_tokens: 300,
+    cache_creation_input_tokens: 20,
+    iterations: [
+      { type: 'message', input_tokens: 5, output_tokens: 40, cache_read_input_tokens: 300, cache_creation_input_tokens: 20 },
+      { type: 'advisor_message', model: 'claude-advisor-model', input_tokens: 900, output_tokens: 60, cache_read_input_tokens: 0, cache_creation_input_tokens: 100 },
+      { type: 'advisor_message', input_tokens: 0, output_tokens: 0 },
+    ],
+  }),
+];

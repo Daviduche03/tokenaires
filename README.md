@@ -10,7 +10,7 @@ It reads the usage logs your coding agents already keep on your machine, and upl
 npx tokenaires
 ```
 
-The first run logs you in, then syncs. Requires Node.js 20 or newer.
+The first run logs you in, then syncs. Requires Node.js 22.15 or newer, which brings the built in SQLite reader and zstd support the CLI uses.
 
 To install it globally instead:
 
@@ -25,7 +25,7 @@ tokenaires
 | --- | --- |
 | `tokenaires` | Logs in if needed, then syncs. |
 | `tokenaires login` | Connects this device with a code you approve in the browser. |
-| `tokenaires scan` | Reads local logs and prints totals per source, top models, record count and date range. Sends nothing and needs no login or network. Also available as `tokenaires --dry-run`. |
+| `tokenaires scan` | Reads local logs and prints totals per source, top models, record count and date range. Sends nothing and needs no login or network. Also available as `tokenaires --dry-run`. Files that have not changed since the last scan are read from the local scan cache. |
 | `tokenaires sync [--quiet]` | Uploads new records, then prints accepted, already synced and rejected counts, your rank and your profile link. |
 | `tokenaires status` | Shows login state, handle, rank, tier and progress to the next tier. |
 | `tokenaires logout` | Deletes the saved login and device key. |
@@ -36,10 +36,14 @@ The LaunchAgent lives at `~/Library/LaunchAgents/com.tokenaires.sync.plist` and 
 
 ## What is read
 
-Everything is read locally and only line by line.
+Everything is read locally. Text logs are read line by line, and only lines that can carry usage are decoded. Databases are opened read only and are never written to. Only records with exact token counts reported by the provider and a stable id from the tool itself are counted. Nothing is estimated from text.
 
-- **Claude Code:** every `*.jsonl` file under `$CLAUDE_CONFIG_DIR/projects` when that variable is set, otherwise under `~/.claude/projects` and `~/.config/claude/projects`, including nested subagent folders. Only assistant lines with a message id and usage block are used. Streamed duplicates are merged, keeping the final line.
-- **Codex:** every `*.jsonl` file under `$CODEX_HOME/sessions` and `$CODEX_HOME/archived_sessions` (`CODEX_HOME` defaults to `~/.codex`). Per call usage comes from `token_usage_record` lines. A `token_count` event is used only when no usage record covers that call, so nothing is counted twice.
+- **Claude Code:** every `*.jsonl` file under `projects` in each Claude config folder, including nested subagent and workflow folders. The folders are `$CLAUDE_CONFIG_DIR` when set (a list separated by commas or the path separator, `~` allowed), otherwise `~/.claude`, `~/.config/claude` and `$XDG_CONFIG_HOME/claude`. On Windows the Claude and Codex homes inside WSL distros are read too. Claude Desktop agent sessions are read from the transcripts under `local-agent-mode-sessions/**/.claude/projects` (the audit logs next to them are skipped, they repeat the same calls). Only assistant lines with a message id and usage block are used. `<synthetic>` and zero usage lines are skipped. Streamed duplicates are merged, keeping the line with the final output count, and a call that appears in two files is counted once. Advisor calls recorded inside a message are counted under the advisor model.
+- **Codex:** every `*.jsonl` and zstd compressed `*.jsonl.zst` rollout under `$CODEX_HOME/sessions` and `$CODEX_HOME/archived_sessions` (`CODEX_HOME` defaults to `~/.codex`). A compressed copy next to a plain file of the same name is skipped, and archived copies count once. Once a rollout writes `token_usage_record` lines they are the only source for that rollout, so compaction calls are counted and the context updates written after them are not. Older rollouts use `token_count` events, skipping re-emitted events and counting calls after a counter reset. History that a forked or spawned session copies from its parent is recognised and skipped, so it is never counted twice.
+- **Gemini CLI:** session files under `~/.gemini/tmp/*/chats`, including subagent folders and the older single JSON format (`GEMINI_CLI_HOME` moves the base folder). Each Gemini message with recorded usage counts once, keeping its last write. Cached tokens are split out of input, thinking tokens are added to output, and tool prompt tokens count as input when the reported total includes them.
+- **Antigravity:** conversation databases under `~/.gemini/antigravity/conversations`, `~/.gemini/antigravity-cli/conversations` and `~/.gemini/antigravity-ide/conversations`. Each generation row with a usage block and response id counts once. Conversations kept only as `.pb` files carry no readable usage and are skipped.
+- **OpenCode:** `opencode*.db` in `$OPENCODE_DATA_DIR`, or `$XDG_DATA_HOME/opencode` (default `~/.local/share/opencode`), from both the 1.x and 2.x table layouts, plus the older file based message store under `storage/message`. Assistant and compaction messages with usage count once per message id. The `OPENCODE_DB_PREFIX` variable changes the database file prefix.
+- **Cursor:** not counted. Cursor keeps per message token counts at zero in its local database and only stores context window estimates, so there is nothing exact to read.
 
 ## What is uploaded
 
@@ -47,8 +51,8 @@ Exactly these fields per record, and nothing else:
 
 | Field | Example |
 | --- | --- |
-| `source` | `claude-code` or `codex` |
-| `recordId` | the message and request id, or the Codex session id and line number |
+| `source` | `claude-code`, `codex`, `gemini-cli`, `antigravity` or `opencode` |
+| `recordId` | the tool's own id for the call: the Claude message and request id, the Codex session id and line number, the Gemini session and message id, the Antigravity conversation and response id, or the OpenCode message id |
 | `model` | `claude-opus-5-5` |
 | `occurredAt` | `2026-11-03T10:15:00.000Z` |
 | `inputTokens` | uncached input tokens |
@@ -59,13 +63,15 @@ Exactly these fields per record, and nothing else:
 
 Never uploaded: prompts, responses, code, tool output, working directories, file paths, project names, git branches or session titles. A test in this repository checks that the upload payload contains only the fields above.
 
-Each sync asks the server for your latest record per source and sends records from 48 hours before that point onward. The server ignores records it already has.
+Each sync asks the server for your latest record per source and sends records from 48 hours before that point onward. The server ignores records it already has. When a new CLI version changes which records are counted, for example by reading a new source or older compressed logs, the next sync sends every local record once so older calls are not missed, then goes back to the 48 hour window. The file `sync-state.json` next to your config remembers that this happened. It holds only your handle and a version number.
 
 ## Privacy
 
 - Run `tokenaires scan` any time to see exactly what would be counted, with no network access.
 - Your login lives in `$XDG_CONFIG_HOME/tokenaires/config.json` (default `~/.config/tokenaires/config.json`), readable only by you (file mode 0600, folder 0700). It holds the API address, your access token, the device id, the device private key and your handle.
 - `tokenaires logout` deletes that file.
+- To make repeat scans fast, the CLI keeps a scan cache next to the config file at `scan-cache.json.gz`, with the same file permissions. For each log file it stores the local path, size and modification time, and the numeric records that would be uploaded (record id, model, time and token counts). It never stores prompts, responses or file contents, and the paths in it are never uploaded. A file that changes is read again, the cache is rebuilt on each new CLI version, and deleting the file is always safe. Set `TOKENAIRES_NO_CACHE=1` to turn it off.
+- SQLite databases are opened read only in immutable mode, so the CLI never writes to them or creates journal files next to them. When a small database has recent changes still in its write ahead log, the database and log are copied to a private temporary folder, read there and deleted.
 
 ## Anti tamper
 
@@ -82,8 +88,13 @@ Each sync asks the server for your latest record per source and sends records fr
 | `TOKENAIRES_WEB_URL` | `https://tokenaires.com` |
 | `TOKENAIRES_NO_BROWSER` | unset. Set it to skip opening the browser at login. |
 | `XDG_CONFIG_HOME` | `~/.config` |
-| `CLAUDE_CONFIG_DIR` | unset. Comma separated list of Claude config folders. |
+| `CLAUDE_CONFIG_DIR` | unset. Claude config folders, separated by commas or the path separator. |
 | `CODEX_HOME` | `~/.codex` |
+| `GEMINI_CLI_HOME` | your home folder |
+| `OPENCODE_DATA_DIR` | `$XDG_DATA_HOME/opencode` |
+| `OPENCODE_DB_PREFIX` | `opencode` |
+| `XDG_DATA_HOME` | `~/.local/share` |
+| `TOKENAIRES_NO_CACHE` | unset. Set it to scan without the local scan cache. |
 
 For local development against the backend:
 
@@ -102,4 +113,8 @@ pnpm build
 node dist/cli.js scan
 ```
 
-The build is a single self contained file at `dist/cli.js`.
+The build is a single self contained file at `dist/cli.js`. The Node built ins `node:sqlite` and `node:zlib` are used as is.
+
+## Credits
+
+Some of the log reading rules, such as how forked Codex sessions replay their parent's history and how Antigravity stores usage, were learned from [codeburn](https://github.com/getagentseal/codeburn) (MIT). See `THIRD_PARTY_NOTICES.md`.

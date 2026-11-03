@@ -1,104 +1,100 @@
 import { basename } from 'node:path';
 import type { UsageRecord } from '@tokenaires/contracts';
 import { eachLine } from '@/files/lines';
-import { child, count, isoTime, parseObject, text, type JsonObject } from '@/parsers/json';
+import { headTimestamp, isReplayed, openReplayWindow } from '@/parsers/codex-replay';
+import { toCodexRecord, tokenCountUsage, UNKNOWN_MODEL, type CodexState } from '@/parsers/codex-usage';
+import { bytesHave, child, markerBuffers, parseObject, text, type JsonObject } from '@/parsers/json';
 
-const UNKNOWN_MODEL = 'unknown';
-const MARKERS = ['"session_meta"', '"turn_context"', '"token_count"', '"token_usage_record"'];
-const FILE_ID = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$/i;
+const MARKERS = markerBuffers('"session_meta"', '"turn_context"', '"token_count"', '"token_usage_record"');
+const FILE_ID = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl(?:\.zst)?$/i;
+const FILE_SUFFIX = /\.jsonl(?:\.zst)?$/;
 
-interface CodexState {
-  sessionId: string | null;
-  fallbackId: string;
-  model: string;
-  lastTotal: number;
-  pendingRecordTotal: number | null;
-}
+export type { CodexState } from '@/parsers/codex-usage';
 
 export function sessionIdFromFileName(path: string): string | null {
   return FILE_ID.exec(basename(path))?.[1]?.toLowerCase() ?? null;
 }
 
-function toRecord(
-  state: CodexState,
-  usage: JsonObject,
-  timestamp: unknown,
-  ordinal: number,
-): UsageRecord | null {
-  const occurredAt = isoTime(timestamp);
-  if (!occurredAt) return null;
-  const input = count(usage, 'input_tokens');
-  const cached = count(usage, 'cached_input_tokens');
-  const record: UsageRecord = {
-    source: 'codex',
-    recordId: `${state.sessionId ?? state.fallbackId}:${ordinal}`,
-    model: state.model,
-    occurredAt,
-    inputTokens: Math.max(0, input - cached),
-    outputTokens: count(usage, 'output_tokens'),
-    cacheReadTokens: cached,
-    cacheWriteTokens: count(usage, 'cache_write_input_tokens'),
-    reasoningTokens: count(usage, 'reasoning_output_tokens'),
-  };
-  const total = record.inputTokens + record.outputTokens + record.cacheReadTokens + record.cacheWriteTokens;
-  return total > 0 ? record : null;
-}
-
-function fromUsageRecord(state: CodexState, entry: JsonObject, ordinal: number): UsageRecord | null {
-  const usage = child(child(entry, 'payload'), 'usage');
-  if (!usage) return null;
-  state.pendingRecordTotal = count(usage, 'total_tokens');
-  return toRecord(state, usage, entry.timestamp, ordinal);
-}
-
-function fromTokenCount(state: CodexState, entry: JsonObject, ordinal: number): UsageRecord | null {
-  const info = child(child(entry, 'payload'), 'info');
-  const last = child(info, 'last_token_usage');
-  if (!info || !last) return null;
-  const total = count(child(info, 'total_token_usage'), 'total_tokens');
-  if (total <= state.lastTotal) return null;
-  state.lastTotal = total;
-  const pending = state.pendingRecordTotal;
-  state.pendingRecordTotal = null;
-  if (pending !== null && pending === count(last, 'total_tokens')) return null;
-  return toRecord(state, last, entry.timestamp, ordinal);
-}
-
 export function createCodexState(path: string): CodexState {
   return {
     sessionId: sessionIdFromFileName(path),
-    fallbackId: basename(path, '.jsonl'),
+    fallbackId: basename(path).replace(FILE_SUFFIX, ''),
+    ownId: null,
     model: UNKNOWN_MODEL,
-    lastTotal: -1,
-    pendingRecordTotal: null,
+    sawMeta: false,
+    sawUsageRecord: false,
+    previousTotal: null,
+    previousInfo: null,
+    cumulative: null,
+    replay: null,
   };
 }
 
+function parentOf(payload: JsonObject | null): string | null {
+  const spawn = child(child(child(payload, 'source'), 'subagent'), 'thread_spawn');
+  return text(payload, 'forked_from_id') ?? text(payload, 'parent_thread_id') ?? text(spawn, 'parent_thread_id');
+}
+
+function readMeta(state: CodexState, entry: JsonObject, payload: JsonObject | null): void {
+  if (state.sawMeta) return;
+  state.sawMeta = true;
+  state.ownId = text(payload, 'id');
+  state.sessionId ??= state.ownId;
+  state.model = text(payload, 'model') ?? state.model;
+  if (parentOf(payload)) state.replay = openReplayWindow(entry.timestamp);
+}
+
+function fromUsageRecord(state: CodexState, entry: JsonObject, ordinal: number, replayed: boolean): UsageRecord | null {
+  const payload = child(entry, 'payload');
+  const usage = child(payload, 'usage');
+  if (!usage) return null;
+  state.sawUsageRecord = true;
+  const thread = text(payload, 'thread_id');
+  if (replayed || (thread && state.ownId && thread !== state.ownId)) return null;
+  return toCodexRecord(state, usage, entry.timestamp, ordinal);
+}
+
+function fromTokenCount(state: CodexState, entry: JsonObject, ordinal: number, replayed: boolean): UsageRecord | null {
+  if (state.sawUsageRecord) return null;
+  const info = child(child(entry, 'payload'), 'info');
+  if (!info) return null;
+  const usage = tokenCountUsage(state, info, replayed);
+  return usage ? toCodexRecord(state, usage, entry.timestamp, ordinal) : null;
+}
+
 export function parseCodexLine(state: CodexState, line: string, index: number): UsageRecord | null {
-  if (!MARKERS.some((marker) => line.includes(marker))) return null;
   const entry = parseObject(line);
   if (!entry) return null;
   const ordinal = typeof entry.ordinal === 'number' ? entry.ordinal : index;
   const payload = child(entry, 'payload');
   if (entry.type === 'session_meta') {
-    state.sessionId ??= text(payload, 'id');
+    readMeta(state, entry, payload);
     return null;
   }
+  const replayed = isReplayed(state.replay, entry.timestamp);
   if (entry.type === 'turn_context') {
     state.model = text(payload, 'model') ?? state.model;
     return null;
   }
-  if (entry.type === 'token_usage_record') return fromUsageRecord(state, entry, ordinal);
+  if (entry.type === 'token_usage_record') return fromUsageRecord(state, entry, ordinal, replayed);
   if (entry.type === 'event_msg' && payload?.type === 'token_count') {
-    return fromTokenCount(state, entry, ordinal);
+    return fromTokenCount(state, entry, ordinal, replayed);
   }
   return null;
 }
 
-export async function parseCodexFile(path: string, into: Map<string, UsageRecord>): Promise<void> {
+export function parseCodexBytes(state: CodexState, line: Buffer, index: number): UsageRecord | null {
+  if (bytesHave(line, MARKERS)) return parseCodexLine(state, line.toString('utf8'), index);
+  if (state.replay?.active) isReplayed(state.replay, headTimestamp(line));
+  return null;
+}
+
+export async function parseCodexFile(path: string): Promise<UsageRecord[] | null> {
   const state = createCodexState(path);
-  await eachLine(path, (line, index) => {
-    const record = parseCodexLine(state, line, index);
+  const into = new Map<string, UsageRecord>();
+  const ok = await eachLine(path, (line, index) => {
+    const record = parseCodexBytes(state, line, index);
     if (record && !into.has(record.recordId)) into.set(record.recordId, record);
   });
+  return ok ? [...into.values()] : null;
 }

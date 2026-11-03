@@ -1,30 +1,72 @@
-import { open } from 'node:fs/promises';
-import { createInterface } from 'node:readline';
+import { createReadStream } from 'node:fs';
+import type { Readable } from 'node:stream';
+import * as zlib from 'node:zlib';
 
-export async function eachLine(
-  path: string,
-  onLine: (line: string, index: number) => void,
-): Promise<void> {
-  let handle;
-  try {
-    handle = await open(path, 'r');
-  } catch {
-    return;
+export type LineHandler = (line: Buffer, index: number) => void;
+
+const NEWLINE = 0x0a;
+const RETURN = 0x0d;
+const READ_CHUNK = 1024 * 1024;
+const ZSTD_SUFFIX = '.zst';
+
+export function canReadZstd(): boolean {
+  return typeof zlib.createZstdDecompress === 'function';
+}
+
+export function isZstd(path: string): boolean {
+  return path.endsWith(ZSTD_SUFFIX);
+}
+
+function openStream(path: string): Readable | null {
+  const raw = createReadStream(path, { highWaterMark: READ_CHUNK });
+  if (!isZstd(path)) return raw;
+  if (!canReadZstd()) {
+    raw.destroy();
+    return null;
   }
-  const stream = handle.createReadStream({ encoding: 'utf8' });
-  const reader = createInterface({ input: stream, crlfDelay: Infinity });
+  const inflate = zlib.createZstdDecompress();
+  raw.on('error', (error) => inflate.destroy(error));
+  inflate.on('close', () => raw.destroy());
+  return raw.pipe(inflate);
+}
+
+function trimReturn(line: Buffer): Buffer {
+  return line.length > 0 && line[line.length - 1] === RETURN ? line.subarray(0, line.length - 1) : line;
+}
+
+export async function eachLine(path: string, onLine: LineHandler): Promise<boolean> {
+  const stream = openStream(path);
+  if (!stream) return false;
+  let carry: Buffer[] = [];
   let index = 0;
+  const emit = (line: Buffer): void => {
+    onLine(trimReturn(line), index);
+    index += 1;
+  };
   try {
-    for await (const line of reader) {
-      onLine(line, index);
-      index += 1;
+    for await (const chunk of stream) {
+      const data = chunk as Buffer;
+      let start = 0;
+      let end = data.indexOf(NEWLINE, start);
+      while (end !== -1) {
+        const piece = data.subarray(start, end);
+        if (carry.length > 0) {
+          emit(Buffer.concat([...carry, piece]));
+          carry = [];
+        } else {
+          emit(piece);
+        }
+        start = end + 1;
+        end = data.indexOf(NEWLINE, start);
+      }
+      if (start < data.length) carry.push(data.subarray(start));
     }
+    if (carry.length > 0) emit(Buffer.concat(carry));
+    return true;
   } catch {
-    return;
+    return false;
   } finally {
-    reader.close();
     stream.destroy();
-    await handle.close().catch(() => undefined);
   }
 }
 
