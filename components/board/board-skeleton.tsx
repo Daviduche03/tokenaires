@@ -1,24 +1,28 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROW_GRID } from "./rank-row";
+import { LADDER } from "./ladder";
 
 export function TopThreeSkeleton() {
   return (
-    <div aria-hidden="true" className="grid gap-3 sm:grid-cols-3">
-      {[0, 1, 2].map((index) => (
-        <div key={index} className="flex flex-col rounded-[var(--radius-card)] border border-line bg-panel-raised p-4">
-          <span className="flex justify-between">
-            <Skeleton className="h-6 w-9" />
-            <Skeleton className="h-5 w-20" />
-          </span>
-          <span className="mt-4 flex items-center gap-3">
-            <Skeleton className="size-10 shrink-0" />
-            <span className="flex flex-col gap-1.5">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-2.5 w-16" />
+    <div aria-hidden="true" className="grid gap-3 sm:grid-cols-3 sm:items-end">
+      {LADDER.map(({ rank, step, order }) => (
+        <div key={rank} className={`flex flex-col ${order}`}>
+          <div className="flex flex-col rounded-[var(--radius-card)] border border-line bg-panel-raised p-4 sm:rounded-b-none">
+            <span className="flex justify-between">
+              <Skeleton className="h-6 w-9" />
+              <Skeleton className="h-5 w-20" />
             </span>
-          </span>
-          <Skeleton className="mt-5 h-7 w-24" />
-          <Skeleton className="mt-3 h-1 w-full" />
+            <span className="mt-4 flex items-center gap-3">
+              <Skeleton className={rank === 1 ? "size-12 shrink-0" : "size-10 shrink-0"} />
+              <span className="flex flex-col gap-1.5">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-2.5 w-16" />
+              </span>
+            </span>
+            <Skeleton className="mt-5 h-7 w-24" />
+            <Skeleton className="mt-3 h-1 w-full" />
+          </div>
+          <div className={`hidden rounded-b-[var(--radius-card)] border-x border-b border-line sm:block ${step}`} />
         </div>
       ))}
     </div>
