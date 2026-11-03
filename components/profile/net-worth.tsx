@@ -1,4 +1,6 @@
 import { nextTier, TIERS, type ProfileResponse } from "@tokenaires/contracts";
+import { GlowSurface } from "@/components/motion/glow-surface";
+import { RollingNumber } from "@/components/motion/rolling-number";
 import { PERIOD_LABELS } from "@/lib/constants";
 import { formatCompact, formatFull } from "@/lib/format";
 import { TokenBreakdown } from "./token-breakdown";
@@ -27,10 +29,11 @@ function TierProgress({ total }: { total: number }) {
 
 export function NetWorth({ profile }: { profile: ProfileResponse }) {
   return (
-    <section aria-label="Net worth" className="panel relative mt-8 overflow-hidden bg-[radial-gradient(55%_70%_at_100%_0%,hsl(var(--glow)/0.12),transparent_70%)] p-5 sm:p-7">
+    <GlowSurface className="mt-8 rounded-[var(--radius-panel)]" radius={420}>
+    <section aria-label="Net worth" className="panel relative overflow-hidden bg-[radial-gradient(55%_70%_at_100%_0%,hsl(var(--glow)/0.12),transparent_70%)] p-5 sm:p-7">
       <p className="label relative">Net worth</p>
       <p className="relative mt-2 break-all text-[42px] font-[350] leading-none tracking-[-0.05em] tabular sm:text-[64px]">
-        {formatFull(profile.totals.total)}
+        <RollingNumber value={profile.totals.total} />
         <span className="ml-2 align-baseline text-base tracking-normal text-t3">tokens</span>
       </p>
       <div className="relative">
@@ -53,5 +56,6 @@ export function NetWorth({ profile }: { profile: ProfileResponse }) {
         <TokenBreakdown totals={profile.totals} />
       </div>
     </section>
+    </GlowSurface>
   );
 }

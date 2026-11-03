@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { ROW_GRID } from "./rank-row";
+import { ROW_GRID } from "./row-grid";
 import { LADDER } from "./ladder";
 
 export function TopThreeSkeleton() {

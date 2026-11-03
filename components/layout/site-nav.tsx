@@ -21,11 +21,18 @@ function NavLinks({ pathname }: { pathname: string | null }) {
             href={link.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "touch-target inline-flex h-8 items-center rounded-full px-3.5 text-[13px] font-medium text-t3 transition-colors duration-150 hover:text-foreground",
+              "group touch-target inline-flex h-8 items-center rounded-full px-3.5 text-[13px] font-medium text-t3 transition-colors duration-150 hover:text-foreground",
               active && "bg-foreground/[0.08] text-foreground",
             )}
           >
-            {link.label}
+            <span className="relative block h-[1.25em] overflow-hidden leading-[1.25em]">
+              <span className="block transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-full">
+                {link.label}
+              </span>
+              <span aria-hidden="true" className="absolute inset-x-0 top-full block transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-full">
+                {link.label}
+              </span>
+            </span>
           </Link>
         );
       })}

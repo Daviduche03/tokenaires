@@ -2,6 +2,7 @@
 
 import { AGENT_SOURCES, BOARD_PERIODS, type BoardPeriod, type BoardSource } from "@tokenaires/contracts";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence } from "motion/react";
 import { useCallback } from "react";
 import { useBoard } from "@/hooks/use-board";
 import { BoardControls } from "./board-controls";
@@ -76,9 +77,17 @@ export function Board() {
               <div className="mt-6">
                 <RankHeader />
                 <ol className="flex flex-col">
-                  {rows.map((entry) => (
-                    <RankRow key={entry.user.handle} entry={entry} leader={leader} showMovement={params.period === "all"} />
-                  ))}
+                  <AnimatePresence mode="popLayout">
+                    {rows.map((entry, index) => (
+                      <RankRow
+                        key={entry.user.handle}
+                        entry={entry}
+                        leader={leader}
+                        index={index}
+                        showMovement={params.period === "all"}
+                      />
+                    ))}
+                  </AnimatePresence>
                 </ol>
               </div>
             )}

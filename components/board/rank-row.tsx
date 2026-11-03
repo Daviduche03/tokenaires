@@ -1,4 +1,7 @@
+"use client";
+
 import type { BoardEntry } from "@tokenaires/contracts";
+import { motion } from "motion/react";
 import { ShieldWarningIcon } from "@solar-icons/react/linear";
 import Link from "next/link";
 import { SourceIcon } from "@/components/brand/source-icon";
@@ -7,10 +10,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { formatCompact, formatFull } from "@/lib/format";
 import { Movement } from "./movement";
+import { ROW_GRID, ROW_STAGGER_CAP_S, ROW_STAGGER_S } from "./row-grid";
 import { ShareBar } from "./share-bar";
 
-export const ROW_GRID =
-  "grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-x-3 md:grid-cols-[3.25rem_minmax(0,1fr)_4rem_7.5rem_10rem_8.5rem]";
 
 export function RankHeader() {
   return (
@@ -25,10 +27,28 @@ export function RankHeader() {
   );
 }
 
-export function RankRow({ entry, leader, showMovement }: { entry: BoardEntry; leader: number; showMovement: boolean }) {
+interface RankRowProps {
+  entry: BoardEntry;
+  leader: number;
+  showMovement: boolean;
+  index: number;
+}
+
+export function RankRow({ entry, leader, showMovement, index }: RankRowProps) {
   const name = entry.user.name ?? entry.user.handle;
   return (
-    <li className={`${ROW_GRID} rounded-[14px] px-3 transition-colors duration-150 hover:bg-foreground/[0.035]`}>
+    <motion.li
+      layout="position"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{
+        layout: { type: "spring", stiffness: 420, damping: 40 },
+        opacity: { duration: 0.25, delay: Math.min(index * ROW_STAGGER_S, ROW_STAGGER_CAP_S) },
+        y: { duration: 0.3, delay: Math.min(index * ROW_STAGGER_S, ROW_STAGGER_CAP_S) },
+      }}
+      className={`${ROW_GRID} rounded-[14px] px-3 transition-colors duration-150 hover:bg-foreground/[0.035]`}
+    >
       <span className="flex items-baseline gap-1.5">
         <span className="text-sm font-medium text-t2 tabular">{entry.rank}</span>
         {showMovement && <Movement change={entry.change} className="text-[10px]" />}
@@ -62,6 +82,6 @@ export function RankRow({ entry, leader, showMovement }: { entry: BoardEntry; le
         <span className="md:hidden">{formatCompact(entry.tokens)}</span>
         <span className="hidden md:inline">{formatFull(entry.tokens)}</span>
       </span>
-    </li>
+    </motion.li>
   );
 }
