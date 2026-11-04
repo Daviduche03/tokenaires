@@ -5,6 +5,7 @@ import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
 import { useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
+import { CustomCursor } from "@/components/motion/custom-cursor";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QUERY_STALE_MS } from "@/lib/constants";
 
@@ -18,12 +19,13 @@ export function Providers({ children }: { children: ReactNode }) {
       }),
   );
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem value={{ light: "light", dark: "dark" }} disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem value={{ light: "light", dark: "dark" }} disableTransitionOnChange>
       <MotionConfig reducedMotion="user">
       <QueryClientProvider client={client}>
         <TooltipProvider delayDuration={200}>
           {children}
           <Toaster position="top-center" toastOptions={{ className: "!rounded-full !bg-panel !text-foreground !border !border-line" }} />
+          <CustomCursor />
         </TooltipProvider>
       </QueryClientProvider>
       </MotionConfig>

@@ -288,6 +288,64 @@
   }
 }
 
+html.custom-cursor,
+html.custom-cursor * {
+  cursor: none;
+}
+
+html.custom-cursor
+  :is(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="reset"], [type="color"], [type="file"], [type="image"]),
+    textarea,
+    [contenteditable]:not([contenteditable="false"])
+  ) {
+  cursor: text;
+}
+
+.custom-cursor-root {
+  --cursor-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+  transition: opacity 150ms ease;
+}
+
+.custom-cursor-root[data-visible="true"]:not([data-target="text"]) {
+  opacity: 1;
+}
+
+.custom-cursor-mark {
+  display: block;
+  overflow: visible;
+  margin-top: -2.8px;
+  transform-origin: 0 2.8px;
+  fill: hsl(var(--accent));
+  stroke: hsl(240 10% 4%);
+  transition:
+    transform 160ms var(--cursor-ease),
+    opacity 150ms ease;
+}
+
+.custom-cursor-root[data-target="interactive"] .custom-cursor-mark {
+  transform: scale(1.2);
+}
+
+.custom-cursor-root[data-target="disabled"] .custom-cursor-mark {
+  opacity: 0.4;
+}
+
+.custom-cursor-root[data-pressed="true"] .custom-cursor-mark {
+  transform: scale(0.9);
+}
+
+.custom-cursor-root[data-pressed="true"][data-target="interactive"] .custom-cursor-mark {
+  transform: scale(1.05);
+}
+
 @media (pointer: coarse) {
   .touch-target {
     min-height: 2.75rem;

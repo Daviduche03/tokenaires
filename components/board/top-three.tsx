@@ -4,6 +4,7 @@ import type { BoardEntry } from "@tokenaires/contracts";
 import { UserPlusRoundedIcon } from "@solar-icons/react/linear";
 import { motion } from "motion/react";
 import Link from "next/link";
+import { AgentStack, agentList } from "@/components/brand/agent-stack";
 import { TierBadge } from "@/components/brand/tier-badge";
 import { GlowSurface } from "@/components/motion/glow-surface";
 import { RollingNumber } from "@/components/motion/rolling-number";
@@ -26,6 +27,11 @@ function RankChip({ rank }: { rank: number }) {
       #{rank}
     </span>
   );
+}
+
+function cardLabel(entry: BoardEntry, name: string) {
+  const base = `${name}, rank ${entry.rank}, ${formatFull(entry.tokens)} tokens`;
+  return entry.sources.length > 0 ? `${base}, uses ${agentList(entry.sources)}` : base;
 }
 
 const COMPACT = { notation: "compact", maximumFractionDigits: 1 } as const;
@@ -89,7 +95,7 @@ function CompactCard({ entry }: { entry: BoardEntry }) {
   return (
     <Link
       href={`/u/${entry.user.handle}`}
-      aria-label={`${name}, rank ${entry.rank}, ${formatFull(entry.tokens)} tokens`}
+      aria-label={cardLabel(entry, name)}
       className={cn(
         "relative flex min-h-[132px] flex-col items-center overflow-hidden rounded-t-[14px] border border-b-0 border-line bg-panel-raised px-2 pb-2.5 pt-3 text-center sm:hidden",
         first && "border-accent/40",
@@ -123,7 +129,7 @@ function Card({ entry, leader }: { entry: BoardEntry; leader: number }) {
     <GlowSurface className="hidden rounded-t-[var(--radius-card)] transition-transform duration-200 hover:-translate-y-0.5 sm:block">
       <Link
         href={`/u/${entry.user.handle}`}
-        aria-label={`${name}, rank ${entry.rank}, ${formatFull(entry.tokens)} tokens`}
+        aria-label={cardLabel(entry, name)}
         className={cn(
           "group relative flex flex-col overflow-hidden rounded-t-[var(--radius-card)] border border-line bg-panel-raised p-4 transition-[border-color] duration-200 hover:border-line-strong",
           first && "border-accent/40 hover:border-accent/70",
@@ -153,17 +159,20 @@ function Card({ entry, leader }: { entry: BoardEntry; leader: number }) {
             </span>
           </span>
         </span>
-        <span className="relative mt-5 flex items-baseline gap-1.5">
-          <span
-            className={cn(
-              "font-[450] leading-none tracking-[-0.04em] tabular",
-              first ? "text-[32px]" : "text-[26px]",
-            )}
-            title={`${formatFull(entry.tokens)} tokens`}
-          >
-            <RollingNumber value={entry.tokens} format={COMPACT} />
+        <span className="relative mt-5 flex items-end justify-between gap-3">
+          <span className="flex min-w-0 items-baseline gap-1.5">
+            <span
+              className={cn(
+                "font-[450] leading-none tracking-[-0.04em] tabular",
+                first ? "text-[32px]" : "text-[26px]",
+              )}
+              title={`${formatFull(entry.tokens)} tokens`}
+            >
+              <RollingNumber value={entry.tokens} format={COMPACT} />
+            </span>
+            <span className="text-xs text-t3">tokens</span>
           </span>
-          <span className="text-xs text-t3">tokens</span>
+          <AgentStack sources={entry.sources} />
         </span>
         <ShareBar
           tokens={entry.tokens}

@@ -6,9 +6,9 @@ import { useSyncExternalStore, type MouseEvent } from "react";
 import { flushSync } from "react-dom";
 
 const MODES = [
-  { value: "system", label: "System", Icon: MonitorIcon },
-  { value: "light", label: "Light", Icon: Sun2Icon },
   { value: "dark", label: "Dark", Icon: MoonIcon },
+  { value: "light", label: "Light", Icon: Sun2Icon },
+  { value: "system", label: "System", Icon: MonitorIcon },
 ] as const;
 
 const REVEAL_MS = 450;
@@ -23,7 +23,7 @@ function resolve(mode: (typeof MODES)[number]["value"]): "light" | "dark" {
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
-  const index = Math.max(0, MODES.findIndex((mode) => mode.value === (mounted ? theme : "system")));
+  const index = Math.max(0, MODES.findIndex((mode) => mode.value === (mounted ? theme : "dark")));
   const current = MODES[index];
   const next = MODES[(index + 1) % MODES.length];
 
