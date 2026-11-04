@@ -8,6 +8,7 @@ COPY . .
 RUN pnpm -C packages/contracts build && pnpm build
 
 FROM node:22-slim
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
 WORKDIR /app
 ENV NODE_ENV=production
