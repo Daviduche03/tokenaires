@@ -31,3 +31,27 @@ export function AgentStack({ sources, className }: { sources: AgentSource[]; cla
     </Tooltip>
   );
 }
+
+export function AgentStackCompact({ sources, max = 3, className }: { sources: AgentSource[]; max?: number; className?: string }) {
+  if (sources.length === 0) return null;
+  const shown = sources.slice(0, max);
+  const extra = sources.length - shown.length;
+  return (
+    <span aria-hidden="true" className={cn("flex shrink-0 items-center", className)}>
+      {shown.map((source, index) => (
+        <span
+          key={source}
+          style={{ zIndex: shown.length - index }}
+          className="relative -ml-1.5 flex size-5 items-center justify-center rounded-full border border-line-strong bg-panel ring-[1.5px] ring-panel-raised first:ml-0"
+        >
+          <SourceIcon source={source} className="size-3" />
+        </span>
+      ))}
+      {extra > 0 && (
+        <span className="relative -ml-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border border-line-strong bg-panel px-1 text-[9px] font-medium text-t3 ring-[1.5px] ring-panel-raised tabular">
+          +{extra}
+        </span>
+      )}
+    </span>
+  );
+}

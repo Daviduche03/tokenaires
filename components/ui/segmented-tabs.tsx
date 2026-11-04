@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 interface SegmentedTabsProps<T extends string> {
   value: T;
   onValueChange: (value: T) => void;
-  options: ReadonlyArray<{ value: T; label: string }>;
+  options: ReadonlyArray<{ value: T; label: string; shortLabel?: string }>;
   "aria-label": string;
   className?: string;
 }
@@ -25,13 +25,13 @@ export function SegmentedTabs<T extends string>({ value, onValueChange, options,
     >
       <TabsPrimitive.List
         aria-label={props["aria-label"]}
-        className={cn("inline-flex items-center gap-0.5 rounded-full border border-line bg-panel p-1", className)}
+        className={cn("inline-flex items-center gap-0.5 rounded-full border border-line bg-panel p-0.5 sm:p-1", className)}
       >
         {options.map((option) => (
           <TabsPrimitive.Trigger
             key={option.value}
             value={option.value}
-            className="touch-target relative h-8 rounded-full px-3.5 text-[13px] font-medium text-t3 transition-colors duration-150 hover:text-t2 data-[state=active]:text-foreground"
+            className="relative h-[30px] rounded-full px-3 text-xs font-medium text-t3 transition-colors duration-150 hover:text-t2 data-[state=active]:text-foreground sm:touch-target sm:h-8 sm:px-3.5 sm:text-[13px]"
           >
             {option.value === value && (
               <motion.span
@@ -40,7 +40,14 @@ export function SegmentedTabs<T extends string>({ value, onValueChange, options,
                 className="absolute inset-0 rounded-full bg-foreground/[0.08]"
               />
             )}
-            <span className="relative">{option.label}</span>
+            {option.shortLabel ? (
+              <>
+                <span className="relative sm:hidden" aria-hidden="true">{option.shortLabel}</span>
+                <span className="max-sm:sr-only sm:relative">{option.label}</span>
+              </>
+            ) : (
+              <span className="relative">{option.label}</span>
+            )}
           </TabsPrimitive.Trigger>
         ))}
       </TabsPrimitive.List>

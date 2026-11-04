@@ -32,7 +32,7 @@ export function Select<T extends string>({ value, onValueChange, options, classN
       <SelectPrimitive.Trigger
         aria-label={props["aria-label"]}
         className={cn(
-          "touch-target inline-flex h-9 min-w-0 items-center justify-between gap-2 rounded-full border border-line-strong bg-panel px-3.5 text-[13px] font-medium text-t2 outline-none transition-colors hover:border-foreground/30 hover:text-foreground data-[state=open]:border-foreground/30 data-[state=open]:text-foreground",
+          "inline-flex h-9 min-w-0 sm:touch-target items-center justify-between gap-2 rounded-full border border-line-strong bg-panel px-3.5 text-[13px] font-medium text-t2 outline-none transition-colors hover:border-foreground/30 hover:text-foreground data-[state=open]:border-foreground/30 data-[state=open]:text-foreground",
           className,
         )}
       >

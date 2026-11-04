@@ -346,8 +346,8 @@ html.custom-cursor
   transform: scale(1.05) rotate(-20deg);
 }
 
-@media (pointer: coarse) {
-  .touch-target {
+@utility touch-target {
+  @media (pointer: coarse) {
     min-height: 2.75rem;
     min-width: 2.75rem;
   }
@@ -361,12 +361,4 @@ html.custom-cursor
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-[data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
-  width: fit-content;
-  max-width: min(calc(100vw - 2rem), 30rem);
-  left: 0;
-  right: 0;
-  margin-inline: auto;
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { RiStarFill } from "react-icons/ri";
 import { SiGithub } from "react-icons/si";
 import { Wordmark } from "@/components/brand/wordmark";
+import { JoinButton } from "@/components/layout/join-button";
 import { SiteNav } from "@/components/layout/site-nav";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -41,9 +42,7 @@ export async function SiteHeader() {
             </a>
           </Button>
           <ThemeToggle />
-          <Button asChild variant="primary" size="sm" className="hidden sm:inline-flex">
-            <Link href="/#join">Join the list</Link>
-          </Button>
+          <JoinButton className="hidden sm:inline-flex" />
         </div>
       </div>
       <div className="page flex justify-center pb-3 md:hidden">

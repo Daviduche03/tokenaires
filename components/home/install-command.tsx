@@ -1,17 +1,17 @@
 "use client";
 
 import { CheckReadIcon, CopyIcon } from "@solar-icons/react/linear";
-import { useCopy } from "@/hooks/use-copy";
+import { useJoin } from "@/hooks/use-join";
 import { SITE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export function InstallCommand({ className, id }: { className?: string; id?: string }) {
-  const { copied, copy } = useCopy();
+  const { copied, join } = useJoin();
   return (
     <button
       id={id}
       type="button"
-      onClick={() => void copy(SITE.installCommand)}
+      onClick={() => void join()}
       aria-label={copied ? "Copied" : `Copy ${SITE.installCommand}`}
       className={cn(
         "group inline-flex h-11 scroll-mt-28 items-center gap-3 rounded-full border border-line-strong bg-panel pl-5 pr-1.5 transition-colors duration-150 hover:border-foreground/25",

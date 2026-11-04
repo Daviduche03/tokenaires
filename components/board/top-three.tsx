@@ -4,7 +4,7 @@ import type { BoardEntry } from "@tokenaires/contracts";
 import { UserPlusRoundedIcon } from "@solar-icons/react/linear";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { AgentStack, agentList } from "@/components/brand/agent-stack";
+import { AgentStack, AgentStackCompact, agentList } from "@/components/brand/agent-stack";
 import { TierBadge } from "@/components/brand/tier-badge";
 import { GlowSurface } from "@/components/motion/glow-surface";
 import { RollingNumber } from "@/components/motion/rolling-number";
@@ -118,6 +118,7 @@ function CompactCard({ entry }: { entry: BoardEntry }) {
       >
         <RollingNumber value={entry.tokens} format={COMPACT} />
       </span>
+      <AgentStackCompact sources={entry.sources} className="relative mt-2" />
     </Link>
   );
 }

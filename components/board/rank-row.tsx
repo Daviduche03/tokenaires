@@ -66,7 +66,16 @@ export function RankRow({ entry, leader, showMovement, index }: RankRowProps) {
               </Tooltip>
             )}
           </span>
-          <span className="block truncate text-xs text-t3">@{entry.user.handle}</span>
+          <span className="flex min-w-0 items-center gap-1.5 text-xs text-t3">
+            <span className="truncate">@{entry.user.handle}</span>
+            {entry.sources.length > 0 && (
+              <span className="flex shrink-0 items-center gap-1 md:hidden">
+                {entry.sources.map((source) => (
+                  <SourceIcon key={source} source={source} className="size-3" />
+                ))}
+              </span>
+            )}
+          </span>
         </span>
       </Link>
       <span className="hidden items-center gap-2 md:flex">

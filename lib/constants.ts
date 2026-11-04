@@ -20,9 +20,23 @@ export const PERIOD_LABELS = {
   week: "7 days",
 } as const;
 
+export const PERIOD_SHORT_LABELS = {
+  all: "All",
+  month: "30d",
+  week: "7d",
+} as const;
+
 export const SOURCE_FILTER_LABELS = {
   all: "All tools",
   ...AGENT_SOURCE_LABELS,
+} as const;
+
+export const JOIN_TOAST = {
+  id: "join",
+  copiedTitle: "Install command copied",
+  copiedDescription: "Paste it in your terminal and sign in with GitHub to take your seat on the list.",
+  manualTitle: `Run ${SITE.installCommand} in your terminal`,
+  manualDescription: "Your browser blocked the clipboard. Type the command, then sign in with GitHub.",
 } as const;
 
 export const QUERY_STALE_MS = 30_000;
