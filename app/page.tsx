@@ -16,7 +16,7 @@ export default function HomePage() {
             The rich list for <span className="text-shine whitespace-nowrap">AI tokens</span>
           </h1>
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-t3 text-balance sm:text-[15px]">
-            Developers ranked by the tokens they burn in Claude Code and Codex.
+            Developers ranked by the tokens they burn in Claude Code, Codex, Kimi, Copilot and more.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <InstallCommand id="join" />
