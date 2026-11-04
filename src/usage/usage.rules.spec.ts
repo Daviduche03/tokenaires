@@ -34,6 +34,12 @@ describe('evaluateRecord', () => {
     ['gemini-cli', 'session-8c1d2e:msg-0004'],
     ['antigravity', 'traj_7f3a2c91.step.12'],
     ['opencode', 'msg_01JABCDEF0123456789'],
+    ['kimi-code', 'session_9681c707-224e-45a2-8870-0a1633dc0c4c:main:42'],
+    ['qwen-code', '3f2a1b0c-9d8e-4f7a-b6c5-d4e3f2a1b0c9'],
+    ['copilot-cli', 'copilot:7d3c1e9a5b2f4c6d8e0a1b3c5d7e9f01'],
+    ['cline', '1761234567890:1761234599123'],
+    ['roo-code', '0199a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b:1761234599123'],
+    ['kilo-code', 'msg_01JABCDEF0123456789'],
   ] as const)('accepts a native %s record id', (source, recordId) => {
     expect(
       evaluateRecord({ ...base, source, recordId, model: 'gemini-3-pro' }, now),

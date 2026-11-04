@@ -13,6 +13,12 @@ export const RECORD_ID_PATTERNS: Record<AgentSource, RegExp> = {
   'gemini-cli': NATIVE_RECORD_ID,
   antigravity: NATIVE_RECORD_ID,
   opencode: NATIVE_RECORD_ID,
+  'kimi-code': NATIVE_RECORD_ID,
+  'qwen-code': NATIVE_RECORD_ID,
+  'copilot-cli': NATIVE_RECORD_ID,
+  cline: NATIVE_RECORD_ID,
+  'roo-code': NATIVE_RECORD_ID,
+  'kilo-code': NATIVE_RECORD_ID,
 };
 
 export const SOURCE_LAUNCH_DATES: Record<AgentSource, string> = {
@@ -21,6 +27,12 @@ export const SOURCE_LAUNCH_DATES: Record<AgentSource, string> = {
   'gemini-cli': '2025-06-01T00:00:00Z',
   antigravity: '2025-11-01T00:00:00Z',
   opencode: '2025-04-01T00:00:00Z',
+  'kimi-code': '2025-08-01T00:00:00Z',
+  'qwen-code': '2025-07-01T00:00:00Z',
+  'copilot-cli': '2025-09-01T00:00:00Z',
+  cline: '2024-06-01T00:00:00Z',
+  'roo-code': '2024-10-01T00:00:00Z',
+  'kilo-code': '2025-03-01T00:00:00Z',
 };
 
 export const MODEL_RELEASE_DATES: ReadonlyArray<{
