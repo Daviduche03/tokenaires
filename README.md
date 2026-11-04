@@ -29,7 +29,7 @@ tokenaires
 | `tokenaires sync [--quiet]` | Uploads new records, then prints accepted, already synced and rejected counts, your rank and your profile link. |
 | `tokenaires status` | Shows login state, handle, rank, tier and progress to the next tier. |
 | `tokenaires logout` | Deletes the saved login and device key. |
-| `tokenaires schedule on` | macOS: installs a LaunchAgent that runs `sync --quiet` every 6 hours. Linux: prints a crontab line to add. |
+| `tokenaires schedule on [--every <hours>]` | macOS: installs a LaunchAgent that runs `sync --quiet` every 6 hours, or at the interval you pick with `--every` (whole hours from 2 to 24, for example `--every 2h`, `--every 12h` or `--every 1d`). Linux: prints a crontab line to add. Run it again with a new `--every` to change the interval. |
 | `tokenaires schedule off` | macOS: unloads and removes the LaunchAgent. Linux: prints the line to remove. |
 
 In a terminal, `scan` and `sync` show a live progress bar while logs are read and records upload, then a summary card with your tier, ranks and progress to the next tier. When output is piped, in CI, or with `TERM=dumb`, they print plain result lines without animation, and `NO_COLOR=1` turns colours off. `sync --quiet` prints nothing unless something goes wrong.

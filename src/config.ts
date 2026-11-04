@@ -54,8 +54,9 @@ export const CONFIG_DIR_MODE = 0o700;
 
 export const SCHEDULE = {
   label: 'com.tokenaires.sync',
-  intervalSeconds: 21_600,
-  cronExpression: '0 */6 * * *',
+  defaultHours: 6,
+  minHours: 2,
+  maxHours: 24,
   logFileName: 'tokenaires-sync.log',
 } as const;
 

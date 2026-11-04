@@ -1,11 +1,12 @@
 import { Command, InvalidArgumentError } from 'commander';
-import { CLI_NAME, CLI_VERSION } from '@/config';
+import { CLI_NAME, CLI_VERSION, SCHEDULE } from '@/config';
 import type { Context } from '@/context';
 import { describeError } from '@/api/errors';
 import { login } from '@/commands/login';
 import { logout } from '@/commands/logout';
 import { scan } from '@/commands/scan';
 import { schedule, type ScheduleMode } from '@/commands/schedule';
+import { parseHours } from '@/schedule/launchd';
 import { status } from '@/commands/status';
 import { sync } from '@/commands/sync';
 import { configPath, loadConfig } from '@/store';
@@ -15,6 +16,14 @@ import { symbols, theme } from '@/ui/theme';
 function parseMode(value: string): ScheduleMode {
   if (value === 'on' || value === 'off') return value;
   throw new InvalidArgumentError('Use on or off.');
+}
+
+function parseEvery(value: string): number {
+  const hours = parseHours(value);
+  if (hours === null) {
+    throw new InvalidArgumentError(`Use whole hours from ${SCHEDULE.minHours} to ${SCHEDULE.maxHours}, for example 2h, 12h or 1d.`);
+  }
+  return hours;
 }
 
 function header(ctx: Context): void {
@@ -75,9 +84,10 @@ export function buildProgram(ctx: Context): Command {
   program.command('logout').description('remove the saved login and device key').action(() => logout(ctx));
   program
     .command('schedule')
-    .description('sync automatically every 6 hours')
+    .description(`sync automatically, every ${SCHEDULE.defaultHours} hours by default`)
     .argument('<mode>', 'on or off', parseMode)
-    .action((mode: ScheduleMode) => schedule(ctx, mode));
+    .option('-e, --every <hours>', `hours between syncs, ${SCHEDULE.minHours} to ${SCHEDULE.maxHours} (default ${SCHEDULE.defaultHours})`, parseEvery)
+    .action((mode: ScheduleMode, options: { every?: number }) => schedule(ctx, mode, options.every === undefined ? {} : { hours: options.every }));
   return program;
 }
 

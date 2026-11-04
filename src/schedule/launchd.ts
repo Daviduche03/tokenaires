@@ -6,6 +6,26 @@ export interface ScheduleTarget {
   scriptPath: string;
   home: string;
   env: NodeJS.ProcessEnv;
+  hours: number;
+}
+
+const HOUR_PATTERN = /^(\d+)\s*(h|hr|hrs|hour|hours)?$|^(1)\s*(d|day)$/i;
+const SECONDS_PER_HOUR = 3600;
+const HOURS_PER_DAY = 24;
+
+export function parseHours(value: string): number | null {
+  const match = HOUR_PATTERN.exec(value.trim());
+  if (!match) return null;
+  const hours = match[3] ? HOURS_PER_DAY : Number(match[1]);
+  return Number.isInteger(hours) && hours >= SCHEDULE.minHours && hours <= SCHEDULE.maxHours ? hours : null;
+}
+
+export function intervalLabel(hours: number): string {
+  return hours === HOURS_PER_DAY ? 'day' : `${hours} hours`;
+}
+
+export function cronExpression(hours: number): string {
+  return hours >= HOURS_PER_DAY ? '0 0 * * *' : `0 */${hours} * * *`;
 }
 
 function escapeXml(value: string): string {
@@ -56,7 +76,7 @@ export function renderPlist(target: ScheduleTarget): string {
     ...args,
     '    </array>',
     '    <key>StartInterval</key>',
-    `    <integer>${SCHEDULE.intervalSeconds}</integer>`,
+    `    <integer>${target.hours * SECONDS_PER_HOUR}</integer>`,
     '    <key>RunAtLoad</key>',
     '    <false/>',
     '    <key>StandardOutPath</key>',
@@ -75,5 +95,5 @@ function shellQuote(value: string): string {
 }
 
 export function cronLine(target: ScheduleTarget): string {
-  return `${SCHEDULE.cronExpression} ${syncArguments(target).map(shellQuote).join(' ')}`;
+  return `${cronExpression(target.hours)} ${syncArguments(target).map(shellQuote).join(' ')}`;
 }
