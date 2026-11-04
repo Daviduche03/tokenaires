@@ -18,20 +18,22 @@ describe("terminal demo scripts", () => {
     expect(commands).toEqual(
       expect.arrayContaining([
         "npx tokenaires",
-        "tokenaires login",
-        "tokenaires scan",
-        "tokenaires sync",
-        "tokenaires sync --quiet",
-        "tokenaires status",
-        "tokenaires schedule on",
-        "tokenaires schedule off",
-        "tokenaires logout",
-        "tokenaires --help",
+        "npx tokenaires login",
+        "npx tokenaires scan",
+        "npx tokenaires sync",
+        "npx tokenaires sync --quiet",
+        "npx tokenaires status",
+                "npx tokenaires schedule off",
+        "npx tokenaires logout",
+        "npx tokenaires --help",
+        "npx tokenaires schedule on --every 12h",
+        "npx tokenaires schedule --help",
       ]),
     );
+    for (const command of commands) expect(command.startsWith("npx tokenaires")).toBe(true);
     const help = TERMINAL_SCRIPTS.find((script) => script.id === "help");
     const helpText = help?.lines.flatMap((line) => (line.kind === "text" ? line.segments.map((segment) => segment.text) : [])).join("\n");
-    for (const entry of ["--dry-run", "login", "scan|dry-run", "sync [options]", "status", "logout", "schedule <mode>"]) {
+    for (const entry of ["--dry-run", "login", "scan|dry-run", "sync [options]", "status", "logout", "schedule [options] <mode>", "-e, --every <hours>"]) {
       expect(helpText).toContain(entry);
     }
   });
