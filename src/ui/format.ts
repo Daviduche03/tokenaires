@@ -34,6 +34,21 @@ export function formatPercent(ratio: number): string {
   return `${percent.toFixed(1)}%`;
 }
 
+export function formatDuration(ms: number): string {
+  const safe = Math.max(0, ms);
+  if (safe < 10_000) return `${(safe / 1000).toFixed(1)}s`;
+  const seconds = Math.round(safe / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ${String(seconds % 60).padStart(2, '0')}s`;
+  return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
+}
+
+export function formatClock(ms: number): string {
+  const seconds = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
 export function formatDay(iso: string): string {
   return iso.slice(0, 10);
 }

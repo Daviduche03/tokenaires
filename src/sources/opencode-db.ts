@@ -1,7 +1,7 @@
 import type { UsageRecord } from '@tokenaires/contracts';
 import type { DatabaseSync } from 'node:sqlite';
 import { isObject, parseObject, type JsonObject } from '@/parsers/json';
-import { openCodeRecord, type OpenCodeLayout } from '@/parsers/opencode';
+import { openCodeRecord, type OpenCodeLayout, type OpenCodeSource } from '@/parsers/opencode';
 
 const TABLES = "SELECT name FROM sqlite_master WHERE type = 'table'";
 const field = (path: string): string => `json_extract(CAST(data AS TEXT), '${path}')`;
@@ -23,7 +23,7 @@ function asTokens(value: unknown): JsonObject | null {
   return typeof value === 'string' ? parseObject(value) : null;
 }
 
-function readRows(db: DatabaseSync, sql: string, layout: OpenCodeLayout, into: Map<string, UsageRecord>): void {
+function readRows(db: DatabaseSync, sql: string, layout: OpenCodeLayout, source: OpenCodeSource, into: Map<string, UsageRecord>): void {
   for (const row of db.prepare(sql).all()) {
     const record = openCodeRecord({
       id: asText(row.id),
@@ -31,15 +31,15 @@ function readRows(db: DatabaseSync, sql: string, layout: OpenCodeLayout, into: M
       createdAt: row.at ?? row.created,
       tokens: asTokens(row.tokens),
       layout,
-    });
+    }, source);
     if (record && !into.has(record.recordId)) into.set(record.recordId, record);
   }
 }
 
-export function readOpenCodeDb(db: DatabaseSync): UsageRecord[] {
+export function readOpenCodeDb(db: DatabaseSync, source: OpenCodeSource = 'opencode'): UsageRecord[] {
   const tables = new Set(db.prepare(TABLES).all().map((row) => row.name));
   const into = new Map<string, UsageRecord>();
-  if (tables.has('message')) readRows(db, LEGACY, 'legacy', into);
-  if (tables.has('session_message')) readRows(db, V2, 'v2', into);
+  if (tables.has('message')) readRows(db, LEGACY, 'legacy', source, into);
+  if (tables.has('session_message')) readRows(db, V2, 'v2', source, into);
   return [...into.values()];
 }

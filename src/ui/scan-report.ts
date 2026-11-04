@@ -2,7 +2,9 @@ import { AGENT_SOURCE_LABELS, type AgentSource } from '@tokenaires/contracts';
 import type { ScanSummary, TokenTotals } from '@/summary';
 import { formatCompact, formatDay, formatInt, formatPercent, plural } from '@/ui/format';
 import { renderTable, type Column, type Row } from '@/ui/table';
-import { theme } from '@/ui/theme';
+import { progressBar, theme } from '@/ui/theme';
+
+const SHARE_BAR = 10;
 
 const COLUMNS: Column[] = [
   { header: 'Source', align: 'left' },
@@ -27,23 +29,24 @@ function cells(label: string, totals: TokenTotals): string[] {
 }
 
 export function renderScanReport(summary: ScanSummary, sources: readonly AgentSource[]): string[] {
-  const rows: Row[] = sources.map((source) => ({
-    cells: cells(AGENT_SOURCE_LABELS[source], summary.bySource[source]),
-  }));
+  const rows: Row[] = sources.map((source) => {
+    const totals = summary.bySource[source];
+    return { cells: cells(AGENT_SOURCE_LABELS[source], totals), paint: totals.records === 0 ? theme.dim : undefined };
+  });
   rows.push({ cells: cells('All sources', summary.overall), paint: theme.strong });
   const lines = ['', ...renderTable(COLUMNS, rows, theme.dim), ''];
   if (summary.topModels.length > 0) {
     const modelRows = summary.topModels.map((model) => ({
-      cells: [model.model, formatCompact(model.total), formatPercent(model.share)],
+      cells: [model.model, formatCompact(model.total), `${progressBar(model.share, SHARE_BAR)} ${formatPercent(model.share).padStart(6)}`],
     }));
     const modelColumns: Column[] = [
       { header: 'Top models', align: 'left' },
       { header: 'Tokens', align: 'right' },
-      { header: 'Share', align: 'right' },
+      { header: 'Share', align: 'left' },
     ];
     lines.push(...renderTable(modelColumns, modelRows, theme.dim), '');
   }
-  lines.push(`  ${theme.strong(formatInt(summary.overall.total))} tokens across ${plural(summary.overall.records, 'record', 'records')}`);
+  lines.push(`  ${theme.strong(theme.accent(formatInt(summary.overall.total)))} tokens across ${plural(summary.overall.records, 'record', 'records')}`);
   if (summary.firstAt && summary.lastAt) {
     lines.push(theme.dim(`  From ${formatDay(summary.firstAt)} to ${formatDay(summary.lastAt)}`));
   }

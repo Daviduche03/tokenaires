@@ -1,4 +1,4 @@
-import { delimiter, join } from 'node:path';
+import { delimiter, isAbsolute, join } from 'node:path';
 import { ENV_KEYS, readEnv } from '@/config';
 
 const SPLIT = new RegExp(`[,${delimiter === ';' ? ';' : ':'}]`);
@@ -67,4 +67,25 @@ export function openCodeDataDir(env: NodeJS.ProcessEnv, home: string): string {
 
 export function openCodeDbPrefix(env: NodeJS.ProcessEnv): string {
   return readEnv(env, ENV_KEYS.openCodeDbPrefix) ?? 'opencode';
+}
+
+export function kimiSessionsRoot(env: NodeJS.ProcessEnv, home: string): string {
+  const override = readEnv(env, ENV_KEYS.kimiHome);
+  return join(override ? expandHome(override, home) : join(home, '.kimi-code'), 'sessions');
+}
+
+export function kimiLegacySessionsRoot(env: NodeJS.ProcessEnv, home: string): string {
+  const override = readEnv(env, ENV_KEYS.kimiShare);
+  return join(override ? expandHome(override, home) : join(home, '.kimi'), 'sessions');
+}
+
+export function kiloDataDir(env: NodeJS.ProcessEnv, home: string): string {
+  return join(readEnv(env, ENV_KEYS.xdgData) ?? join(home, '.local', 'share'), 'kilo');
+}
+
+export function kiloDbOverride(env: NodeJS.ProcessEnv, home: string): string | null {
+  const configured = readEnv(env, ENV_KEYS.kiloDb);
+  if (!configured || configured === ':memory:') return null;
+  const path = expandHome(configured, home);
+  return isAbsolute(path) ? path : join(kiloDataDir(env, home), path);
 }

@@ -4,20 +4,27 @@ import { PARSE_CONCURRENCY } from '@/config';
 import { loadScanCache, scanCachePath, type ScanCache } from '@/cache/scan-cache';
 import { runPool } from '@/files/lines';
 import { keepLargest } from '@/parsers/merge';
+import { ScanTracker, type ScanProgressListener } from '@/scan-progress';
 import { antigravitySource } from '@/sources/antigravity';
 import { claudeSource } from '@/sources/claude';
+import { clineSource, rooSource } from '@/sources/cline';
 import { codexSource } from '@/sources/codex';
+import { copilotSource } from '@/sources/copilot';
 import { geminiSource } from '@/sources/gemini';
+import { kiloSource } from '@/sources/kilo';
+import { kimiSource } from '@/sources/kimi';
 import { openCodeSource } from '@/sources/opencode';
+import { qwenSource } from '@/sources/qwen';
 import type { LogSource, SourceContext } from '@/sources/types';
 
-export const LOG_SOURCES: readonly LogSource[] = [claudeSource, codexSource, geminiSource, antigravitySource, openCodeSource];
+export const LOG_SOURCES: readonly LogSource[] = [claudeSource, codexSource, geminiSource, antigravitySource, openCodeSource, kimiSource, qwenSource, copilotSource, clineSource, rooSource, kiloSource];
 
 export interface ScanOptions {
   env: NodeJS.ProcessEnv;
   home: string;
   platform?: NodeJS.Platform;
   cachePath?: string | null;
+  onProgress?: ScanProgressListener;
 }
 
 export interface ScanResult {
@@ -35,21 +42,29 @@ async function fileSignature(path: string): Promise<string | null> {
   }
 }
 
-async function readOne(source: LogSource, path: string, cache: ScanCache): Promise<UsageRecord[]> {
+async function readOne(source: LogSource, path: string, cache: ScanCache): Promise<{ records: UsageRecord[]; cached: boolean }> {
   const sig = (await source.signature?.(path)) ?? (await fileSignature(path));
   const hit = sig ? cache.get(path, sig) : null;
-  if (hit) return hit;
+  if (hit) return { records: hit, cached: true };
   const records = await source.parse(path);
   if (records && sig) cache.set(path, sig, source.source, records);
-  return records ?? [];
+  return { records: records ?? [], cached: false };
 }
 
-async function collect(source: LogSource, ctx: SourceContext, cache: ScanCache): Promise<{ records: UsageRecord[]; files: number }> {
+async function collect(
+  source: LogSource,
+  ctx: SourceContext,
+  cache: ScanCache,
+  tracker: ScanTracker,
+): Promise<{ records: UsageRecord[]; files: number }> {
   const files = await source.discover(ctx);
+  tracker.discovered(source.source, files.length);
   const perFile: UsageRecord[][] = new Array<UsageRecord[]>(files.length);
   const order = files.map((file, index) => ({ file, index }));
   await runPool(order, PARSE_CONCURRENCY, async ({ file, index }) => {
-    perFile[index] = await readOne(source, file, cache);
+    const result = await readOne(source, file, cache);
+    perFile[index] = result.records;
+    tracker.fileRead(source.source, result.cached);
   });
   const into = new Map<string, UsageRecord>();
   for (const records of perFile) for (const record of records) keepLargest(into, record);
@@ -69,7 +84,8 @@ export async function scanLocal(options: ScanOptions): Promise<ScanResult> {
   const ctx: SourceContext = { env: options.env, home: options.home, platform: options.platform ?? process.platform };
   const cachePath = options.cachePath === undefined ? scanCachePath(options.env, options.home) : options.cachePath;
   const cache = await loadScanCache(cachePath);
-  const results = await Promise.all(LOG_SOURCES.map((source) => collect(source, ctx, cache)));
+  const tracker = new ScanTracker(LOG_SOURCES.length, options.onProgress);
+  const results = await Promise.all(LOG_SOURCES.map((source) => collect(source, ctx, cache, tracker)));
   await cache.save();
   const files = emptyCounts();
   LOG_SOURCES.forEach((source, index) => {

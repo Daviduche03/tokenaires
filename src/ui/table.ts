@@ -1,3 +1,5 @@
+import { padEnd, padStart, visibleWidth } from '@/ui/ansi';
+
 export type Align = 'left' | 'right';
 
 export interface Column {
@@ -9,16 +11,16 @@ export type Paint = (text: string) => string;
 
 export interface Row {
   cells: string[];
-  paint?: Paint;
+  paint?: Paint | undefined;
 }
 
 function pad(text: string, width: number, align: Align): string {
-  return align === 'right' ? text.padStart(width) : text.padEnd(width);
+  return align === 'right' ? padStart(text, width) : padEnd(text, width);
 }
 
 export function renderTable(columns: readonly Column[], rows: readonly Row[], headerPaint: Paint): string[] {
   const widths = columns.map((column, index) =>
-    Math.max(column.header.length, ...rows.map((row) => (row.cells[index] ?? '').length)),
+    Math.max(visibleWidth(column.header), ...rows.map((row) => visibleWidth(row.cells[index] ?? ''))),
   );
   const format = (cells: readonly string[]): string =>
     cells

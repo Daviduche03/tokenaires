@@ -7,6 +7,13 @@ export interface Output {
   error(text: string): void;
 }
 
+export interface Terminal {
+  interactive: boolean;
+  width(): number;
+  write(text: string): void;
+  onInterrupt(cleanup: () => void): () => void;
+}
+
 export interface RunResult {
   code: number;
   stdout: string;
@@ -23,6 +30,7 @@ export interface Context {
   nodePath: string;
   scriptPath: string;
   out: Output;
+  term: Terminal;
   fetch: typeof fetch;
   sleep(ms: number): Promise<void>;
   openUrl(url: string): void;
@@ -53,6 +61,33 @@ function resolveScript(path: string | undefined): string {
   }
 }
 
+const DEFAULT_WIDTH = 80;
+const INTERRUPTED_EXIT_CODE = 130;
+
+function isInteractive(stream: NodeJS.WriteStream, env: NodeJS.ProcessEnv): boolean {
+  return stream.isTTY && !env.CI && env.TERM !== 'dumb';
+}
+
+export function createTerminal(stream: NodeJS.WriteStream, env: NodeJS.ProcessEnv): Terminal {
+  return {
+    interactive: isInteractive(stream, env),
+    width: () => stream.columns || DEFAULT_WIDTH,
+    write: (text) => {
+      stream.write(text);
+    },
+    onInterrupt: (cleanup) => {
+      const handler = (): void => {
+        cleanup();
+        process.exit(INTERRUPTED_EXIT_CODE);
+      };
+      process.once('SIGINT', handler);
+      return () => {
+        process.off('SIGINT', handler);
+      };
+    },
+  };
+}
+
 export function createContext(): Context {
   const platform = process.platform;
   return {
@@ -70,6 +105,7 @@ export function createContext(): Context {
         process.stderr.write(`${text}\n`);
       },
     },
+    term: createTerminal(process.stderr, process.env),
     fetch: globalThis.fetch.bind(globalThis),
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     openUrl: (url) => {

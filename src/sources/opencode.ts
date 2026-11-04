@@ -3,7 +3,7 @@ import { basename, join } from 'node:path';
 import type { UsageRecord } from '@tokenaires/contracts';
 import { findAll, listDir, type FileFilter } from '@/files/walk';
 import { parseObject } from '@/parsers/json';
-import { legacyMessage, openCodeRecord } from '@/parsers/opencode';
+import { legacyMessage, openCodeRecord, type OpenCodeSource } from '@/parsers/opencode';
 import { openCodeDataDir, openCodeDbPrefix } from '@/parsers/paths';
 import { dbSignature, withReadOnlyDb } from '@/sqlite/open';
 import { readOpenCodeDb } from '@/sources/opencode-db';
@@ -14,11 +14,11 @@ const JSON_SUFFIX = '.json';
 
 const isMessageFile: FileFilter = (_path, name) => name.endsWith(JSON_SUFFIX);
 
-export async function parseOpenCodeMessageFile(path: string): Promise<UsageRecord[] | null> {
+export async function parseOpenCodeMessageFile(path: string, source: OpenCodeSource = 'opencode'): Promise<UsageRecord[] | null> {
   try {
     const data = parseObject(await readFile(path, 'utf8'));
     const message = data ? legacyMessage(data, basename(path, JSON_SUFFIX), null) : null;
-    const record = message ? openCodeRecord(message) : null;
+    const record = message ? openCodeRecord(message, source) : null;
     return record ? [record] : [];
   } catch {
     return null;

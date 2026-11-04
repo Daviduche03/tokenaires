@@ -9,17 +9,22 @@ import { schedule, type ScheduleMode } from '@/commands/schedule';
 import { status } from '@/commands/status';
 import { sync } from '@/commands/sync';
 import { configPath, loadConfig } from '@/store';
-import { theme } from '@/ui/theme';
+import { renderHeader } from '@/ui/header';
+import { symbols, theme } from '@/ui/theme';
 
 function parseMode(value: string): ScheduleMode {
   if (value === 'on' || value === 'off') return value;
   throw new InvalidArgumentError('Use on or off.');
 }
 
+function header(ctx: Context): void {
+  for (const line of renderHeader()) ctx.out.line(line);
+}
+
 async function loginThenSync(ctx: Context): Promise<void> {
   const existing = await loadConfig(configPath(ctx.env, ctx.home));
   const config = existing ?? (await login(ctx));
-  await sync(ctx, { quiet: false }, config);
+  await sync(ctx, { quiet: false, justLoggedIn: existing === null }, config);
 }
 
 export function buildProgram(ctx: Context): Command {
@@ -36,24 +41,37 @@ export function buildProgram(ctx: Context): Command {
       },
     })
     .action(async (options: { dryRun?: boolean }) => {
+      header(ctx);
       await (options.dryRun ? scan(ctx) : loginThenSync(ctx));
     });
   program.command('login').description('connect this device to your Tokenaires account').action(async () => {
+    header(ctx);
     await login(ctx);
   });
   program
     .command('scan')
     .alias('dry-run')
     .description('read local logs and print totals without uploading anything')
-    .action(() => scan(ctx));
+    .action(async () => {
+      header(ctx);
+      await scan(ctx);
+    });
   program
     .command('sync')
     .description('upload new usage records and show your rank')
     .option('-q, --quiet', 'print nothing unless something goes wrong')
     .action(async (options: { quiet?: boolean }) => {
-      await sync(ctx, { quiet: options.quiet === true });
+      const quiet = options.quiet === true;
+      if (!quiet) header(ctx);
+      await sync(ctx, { quiet });
     });
-  program.command('status').description('show login state, rank and tier progress').action(() => status(ctx));
+  program
+    .command('status')
+    .description('show login state, rank and tier progress')
+    .action(async () => {
+      header(ctx);
+      await status(ctx);
+    });
   program.command('logout').description('remove the saved login and device key').action(() => logout(ctx));
   program
     .command('schedule')
@@ -68,7 +86,7 @@ export async function runCli(ctx: Context, argv: string[]): Promise<number> {
     await buildProgram(ctx).parseAsync(argv, { from: 'user' });
     return 0;
   } catch (error) {
-    ctx.out.error(`  ${theme.bad('Error')} ${describeError(error)}`);
+    ctx.out.error(`  ${theme.bad(`${symbols.cross} Error`)} ${describeError(error)}`);
     return 1;
   }
 }

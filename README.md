@@ -32,6 +32,8 @@ tokenaires
 | `tokenaires schedule on` | macOS: installs a LaunchAgent that runs `sync --quiet` every 6 hours. Linux: prints a crontab line to add. |
 | `tokenaires schedule off` | macOS: unloads and removes the LaunchAgent. Linux: prints the line to remove. |
 
+In a terminal, `scan` and `sync` show a live progress bar while logs are read and records upload, then a summary card with your tier, ranks and progress to the next tier. When output is piped, in CI, or with `TERM=dumb`, they print plain result lines without animation, and `NO_COLOR=1` turns colours off. `sync --quiet` prints nothing unless something goes wrong.
+
 The LaunchAgent lives at `~/Library/LaunchAgents/com.tokenaires.sync.plist` and points at the Node binary and script you ran it with. If you used `npx`, install globally first so the path stays valid.
 
 ## What is read
@@ -43,6 +45,10 @@ Everything is read locally. Text logs are read line by line, and only lines that
 - **Gemini CLI:** session files under `~/.gemini/tmp/*/chats`, including subagent folders and the older single JSON format (`GEMINI_CLI_HOME` moves the base folder). Each Gemini message with recorded usage counts once, keeping its last write. Cached tokens are split out of input, thinking tokens are added to output, and tool prompt tokens count as input when the reported total includes them.
 - **Antigravity:** conversation databases under `~/.gemini/antigravity/conversations`, `~/.gemini/antigravity-cli/conversations` and `~/.gemini/antigravity-ide/conversations`. Each generation row with a usage block and response id counts once. Conversations kept only as `.pb` files carry no readable usage and are skipped.
 - **OpenCode:** `opencode*.db` in `$OPENCODE_DATA_DIR`, or `$XDG_DATA_HOME/opencode` (default `~/.local/share/opencode`), from both the 1.x and 2.x table layouts, plus the older file based message store under `storage/message`. Assistant and compaction messages with usage count once per message id. The `OPENCODE_DB_PREFIX` variable changes the database file prefix.
+- **Kimi Code:** each agent's `wire.jsonl` under `~/.kimi-code/sessions` (`KIMI_CODE_HOME` moves it), main agent and subagents alike. Every `usage.record` line is one model call with exact input, output and cache counts, labelled with the model from the request before it. A forked session starts with a copy of its parent's log, so only the lines after the fork marker are counted. Sessions from the older Python kimi-cli under `~/.kimi/sessions` (`KIMI_SHARE_DIR` moves it) are read too, counting each provider message id once and taking the model name from `config.toml`.
+- **Qwen Code:** chat logs under `~/.qwen/projects/*/chats`, archived chats, subagent transcripts under `subagents`, and the older JSON sessions under `~/.qwen/tmp/*/chats` (`QWEN_HOME` moves the base folder, and `QWEN_RUNTIME_DIR` is read as well). Each assistant turn with usage counts once by its id, so a branched copy of a session is not counted twice. Cached tokens are split out of input. Thinking tokens count as output only when the reported total shows they were billed separately, because some backends estimate them from text. Subagent turns take their model from the agent's metadata file.
+- **Copilot CLI:** the `assistant_usage_events` table in `~/.copilot/session-store.db` (`COPILOT_HOME` moves it), one row per request including compaction. Cached tokens are split out of input. The per session totals written at shutdown are skipped, because they add up across resumes.
+- **Kilo Code:** `kilo.db` and channel databases in `$XDG_DATA_HOME/kilo` (default `~/.local/share/kilo`), which use the OpenCode layout, plus a database named by `KILO_DB`. Sessions Kilo imported from its old extension carry zero usage and are skipped.
 - **Cursor:** not counted. Cursor keeps per message token counts at zero in its local database and only stores context window estimates, so there is nothing exact to read.
 
 ## What is uploaded
@@ -51,8 +57,8 @@ Exactly these fields per record, and nothing else:
 
 | Field | Example |
 | --- | --- |
-| `source` | `claude-code`, `codex`, `gemini-cli`, `antigravity` or `opencode` |
-| `recordId` | the tool's own id for the call: the Claude message and request id, the Codex session id and line number, the Gemini session and message id, the Antigravity conversation and response id, or the OpenCode message id |
+| `source` | `claude-code`, `codex`, `gemini-cli`, `antigravity`, `opencode`, `kimi-code`, `qwen-code`, `copilot-cli`, `cline`, `roo-code` or `kilo-code` |
+| `recordId` | the tool's own id for the call: the Claude message and request id, the Codex session id and line number, the Gemini session and message id, the Antigravity conversation and response id, the OpenCode or Kilo message id, the Kimi Code session, agent and line or the kimi-cli message id, a hash of the Copilot session, row and time, the Qwen message id, or the Cline or Roo task and request time |
 | `model` | `claude-opus-5-5` |
 | `occurredAt` | `2026-11-03T10:15:00.000Z` |
 | `inputTokens` | uncached input tokens |

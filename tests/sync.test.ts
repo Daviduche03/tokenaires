@@ -74,7 +74,11 @@ describe('login and sync against a fake API', () => {
     const output = ctx.lines.join('\n');
     expect(output).toMatch(/Accepted\s+6/);
     expect(output).toMatch(/Already synced\s+1/);
-    expect(output).toContain('#42 all time');
+    expect(output).toMatch(/Signed in as @ada/);
+    expect(output).toMatch(/Read \d+ log files .* tokens in 7 records/);
+    expect(output).toMatch(/Uploaded 7 records/);
+    expect(output).toMatch(/#42\s+#7\s+unranked/);
+    expect(output).toMatch(/all time\s+this month\s+this week/);
     expect(output).toContain('http://localhost:7021/u/ada');
   });
 
@@ -122,8 +126,9 @@ describe('login and sync against a fake API', () => {
     await status(ctx);
     const output = ctx.lines.join('\n');
     expect(output).toContain('Logged in as @ada');
-    expect(output).toContain('Rank      #42 all time, #7 this month, unranked this week');
-    expect(output).toContain('of the way to Thousandaire');
+    expect(output).toMatch(/#42\s+#7\s+unranked/);
+    expect(output).toMatch(/all time\s+this month\s+this week/);
+    expect(output).toMatch(/more tokens \S+ Thousandaire/);
   });
 
   it('logs in then syncs when run with no arguments, and scan works offline', async () => {

@@ -30,6 +30,7 @@ export function testContext(overrides: Partial<Context> & { home: string; env: N
       line: (text = '') => lines.push(stripAnsi(text)),
       error: (text) => errors.push(stripAnsi(text)),
     },
+    term: { interactive: false, width: () => 80, write: () => undefined, onInterrupt: () => () => undefined },
     fetch: globalThis.fetch.bind(globalThis),
     sleep: (ms) => {
       sleeps.push(ms);

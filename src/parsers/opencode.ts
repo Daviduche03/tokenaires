@@ -1,4 +1,4 @@
-import type { UsageRecord } from '@tokenaires/contracts';
+import type { AgentSource, UsageRecord } from '@tokenaires/contracts';
 import { child, count, epochTime, nativeId, text, type JsonObject } from '@/parsers/json';
 import { hasTokens } from '@/parsers/merge';
 
@@ -20,7 +20,9 @@ function reasoningIsSeparate(tokens: JsonObject, layout: OpenCodeLayout): boolea
   return total > 0 && (total === base || total === base + count(cache, 'read') + count(cache, 'write'));
 }
 
-export function openCodeRecord(message: OpenCodeMessage): UsageRecord | null {
+export type OpenCodeSource = Extract<AgentSource, 'opencode' | 'kilo-code'>;
+
+export function openCodeRecord(message: OpenCodeMessage, source: OpenCodeSource = 'opencode'): UsageRecord | null {
   const recordId = nativeId(message.id);
   const occurredAt = epochTime(message.createdAt);
   const tokens = message.tokens;
@@ -30,7 +32,7 @@ export function openCodeRecord(message: OpenCodeMessage): UsageRecord | null {
   const output = count(tokens, 'output');
   const separate = reasoningIsSeparate(tokens, message.layout);
   const record: UsageRecord = {
-    source: 'opencode',
+    source,
     recordId,
     model: message.model,
     occurredAt,

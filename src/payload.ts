@@ -67,8 +67,10 @@ export function prepareRecords(records: readonly UsageRecord[]): PreparedRecords
   return { valid, invalid };
 }
 
+export const BATCH_RECORDS = Math.min(UPLOAD_BATCH_SIZE, INGEST_LIMITS.maxRecordsPerBatch);
+
 export function batchBodies(records: readonly UsageRecord[]): string[] {
-  const size = Math.min(UPLOAD_BATCH_SIZE, INGEST_LIMITS.maxRecordsPerBatch);
+  const size = BATCH_RECORDS;
   const bodies: string[] = [];
   for (let start = 0; start < records.length; start += size) {
     const batch: IngestBatch = {
