@@ -331,7 +331,7 @@ html.custom-cursor
 }
 
 .custom-cursor-root[data-target="interactive"] .custom-cursor-mark {
-  transform: scale(1.2);
+  transform: scale(1.2) rotate(-20deg);
 }
 
 .custom-cursor-root[data-target="disabled"] .custom-cursor-mark {
@@ -343,7 +343,7 @@ html.custom-cursor
 }
 
 .custom-cursor-root[data-pressed="true"][data-target="interactive"] .custom-cursor-mark {
-  transform: scale(1.05);
+  transform: scale(1.05) rotate(-20deg);
 }
 
 @media (pointer: coarse) {
