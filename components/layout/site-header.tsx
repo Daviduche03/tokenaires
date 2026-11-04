@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RiStarFill } from "react-icons/ri";
 import { SiGithub } from "react-icons/si";
 import { Wordmark } from "@/components/brand/wordmark";
 import { SiteNav } from "@/components/layout/site-nav";
@@ -17,15 +18,16 @@ export function SiteHeader() {
           <SiteNav />
         </div>
         <div className="flex items-center gap-2 justify-self-end">
-          <a
-            href={SITE.repoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Source on GitHub"
-            className="touch-target inline-flex size-9 items-center justify-center rounded-full border border-line bg-panel text-t3 transition-colors hover:border-line-strong hover:text-foreground"
-          >
-            <SiGithub className="size-4" aria-hidden="true" />
-          </a>
+          <Button asChild variant="outline" size="sm" className="group gap-1.5 pl-3 pr-3.5">
+            <a href={SITE.repoUrl} target="_blank" rel="noopener noreferrer" aria-label="Star Tokenaires on GitHub">
+              <SiGithub className="size-3.5" aria-hidden="true" />
+              <span>Star</span>
+              <RiStarFill
+                className="size-3.5 text-accent-text transition-transform duration-200 ease-out group-hover:rotate-[72deg] group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:transform-none"
+                aria-hidden="true"
+              />
+            </a>
+          </Button>
           <ThemeToggle />
           <Button asChild variant="primary" size="sm" className="hidden sm:inline-flex">
             <Link href="/#join">Join the list</Link>
